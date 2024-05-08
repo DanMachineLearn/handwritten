@@ -149,8 +149,7 @@ def main():
         size = len(train_loader.dataset)
         num_batchs = len(train_loader)
         with torch.no_grad():
-            # for test_X, test_y in iter(test_loader):
-            for test_X, test_y in iter(train_loader):
+            for test_X, test_y in iter(test_loader):
                 test_output : torch.Tensor = model(test_X)
                 val_loss = criterion(test_output, test_y)
                 test_loss += val_loss.item()
