@@ -28,40 +28,33 @@ import os
 
 def main():
     ## 数据集目录
-    if os.environ["DATA_SET_FOLDER"]:
-        # /gemini/data-1
-        DATA_SET_FOLDER = os.environ["DATA_SET_FOLDER"]
-    else:
-        DATA_SET_FOLDER = "work/data/HWDB_pot"
-
+    DATA_SET_FOLDER = os.environ["DATA_SET_FOLDER"] if os.environ["DATA_SET_FOLDER"] else "work/data/HWDB_pot"
     ## 模型目录
-    MODEL_FOLDER = ""
-
-
+    MODEL_FOLDER = os.environ["MODEL_FOLDER"] if os.environ["MODEL_FOLDER"] else ""
     # 初始的学习率
-    init_ln=0.001
+    init_ln = float(os.environ["INIT_LN"] if os.environ["INIT_LN"] else 0.001)
     # 最低的学习率
-    min_ln = 0.0001
+    min_ln = float(os.environ["MIN_LN"] if os.environ["MIN_LN"] else 0.0001)
     # 每次训练的批次
-    # batch_size=1024
-    batch_size=512
-    # batch_size=4096
-    # batch_size=8192
-    # 测试组的数量
-    test_size = 20
+    batch_size = int(os.environ["BATCH_SIZE"] if os.environ["BATCH_SIZE"] else 512)
     # 循环训练的次数
-    num_epochs = 20
+    num_epochs = int(os.environ["NUM_EPOCHS"] if os.environ["NUM_EPOCHS"] else 20)
     # 前几次训练不修改学习率
-    patience = 1
+    patience = int(os.environ["PATIENCE"] if os.environ["PATIENCE"] else 1)
+    # 训练数据集的文件夹
+    train_folder = os.environ["TRAIN_FOLDER"] if os.environ["TRAIN_FOLDER"] else "PotTrain"
+    # 测试数据集的文件夹
+    test_folder = os.environ["TEST_FOLDER"] if os.environ["TEST_FOLDER"] else "PotTest"
+
     optimizer = 1 # 使用adam，否则使用SDG
 
     # 样品的数据来源
     train_pot_folder = []
     # train_pot_folder.append(f"{DATA_SET_FOLDER}/PotSimple")
-    train_pot_folder.append(f"{DATA_SET_FOLDER}/PotTrain")
+    train_pot_folder.append(f"{DATA_SET_FOLDER}/{train_folder}")
     # train_pot_folder.append(f"{DATA_SET_FOLDER}/PotTest")
     test_pot_folder = []
-    test_pot_folder.append(f"{DATA_SET_FOLDER}/PotTest")
+    test_pot_folder.append(f"{DATA_SET_FOLDER}/{test_folder}")
     # test_pot_folder.append(f"{DATA_SET_FOLDER}/PotSimple")
     # test_pot_folder.append(f"{DATA_SET_FOLDER}/PotSimpleTest")
     # pot_folder.append(f"{DATA_SET_FOLDER}/PotTest")
