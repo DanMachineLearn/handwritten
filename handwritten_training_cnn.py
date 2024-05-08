@@ -28,8 +28,10 @@ import os
 
 def main():
     ## 数据集目录
+    # /gemini/data-1
     DATA_SET_FOLDER = os.environ["DATA_SET_FOLDER"] if os.environ["DATA_SET_FOLDER"] else "work/data/HWDB_pot"
     ## 模型目录
+    # /gemini/pretrain
     MODEL_FOLDER = os.environ["MODEL_FOLDER"] if os.environ["MODEL_FOLDER"] else ""
     # 初始的学习率
     init_ln = float(os.environ["INIT_LN"] if os.environ["INIT_LN"] else 0.001)
