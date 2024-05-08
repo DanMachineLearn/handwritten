@@ -101,6 +101,7 @@ def main():
 
     ## 创建模型
     model = HandWrittenCnnModel(input_shape=x_transforms[0].input_shape, output_classes=len(train_dataset.labels))
+    model = model.to(device)
 
 
     ## 创建学习器
@@ -142,9 +143,10 @@ def main():
         model.train()  # 设置为训练模式
         # train_size = int(len(train_dataset) / batch_size)
         with alive_bar(len(train_loader)) as bar:
-            for inputs, real_y in iter(train_loader):
-                test_output = model(inputs)  # 前向传播
-                loss = criterion(test_output, real_y) 
+            for X, y in iter(train_loader):
+                X, y = X.to(device), y.to(device)
+                test_output = model(X)  # 前向传播
+                loss = criterion(test_output, y) 
                 loss.backward(retain_graph=False)  # 反向传播，不累计梯度
                 optimizer.step()
                 optimizer.zero_grad()  # 清空梯度
@@ -162,6 +164,7 @@ def main():
         num_batchs = len(train_loader)
         with torch.no_grad():
             for test_X, test_y in iter(test_loader):
+                test_X, test_y = test_X.to(device), test_y.to(device)
                 test_output : torch.Tensor = model(test_X)
                 val_loss = criterion(test_output, test_y)
                 test_loss += val_loss.item()
