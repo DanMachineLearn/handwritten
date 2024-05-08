@@ -28,6 +28,7 @@ import os
 
 def main():
 
+
     ## 数据集目录
     # /gemini/data-1
     DATA_SET_FOLDER = os.environ["DATA_SET_FOLDER"] if os.environ.__contains__("DATA_SET_FOLDER") else "work/data/HWDB_pot"
@@ -48,6 +49,16 @@ def main():
     train_folder = os.environ["TRAIN_FOLDER"] if os.environ.__contains__("TRAIN_FOLDER") else "PotTrain"
     # 测试数据集的文件夹
     test_folder = os.environ["TEST_FOLDER"] if os.environ.__contains__("TEST_FOLDER") else "PotTest"
+
+    ## 优先使用cuda
+    device = (
+        "cuda"
+        if torch.cuda.is_available()
+        else "mps"
+        if torch.backends.mps.is_available()
+        else "cpu"
+        )
+    print(f"using {device} device")
 
     optimizer = 1 # 使用adam，否则使用SDG
 
