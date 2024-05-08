@@ -24,9 +24,15 @@ from to_one_hot_transform import ToOneHot
 from to_tensor_transform import ToTensor
 from torch.utils.data import IterableDataset
 
+import os
+
 def main():
     ## 数据集目录
-    DATA_SET_FOLDER = "work/data/HWDB_pot"
+    if os.environ["DATA_SET_FOLDER"]:
+        DATA_SET_FOLDER = os.environ["DATA_SET_FOLDER"]
+    else:
+        DATA_SET_FOLDER = "work/data/HWDB_pot"
+
     ## 模型目录
     MODEL_FOLDER = ""
 
@@ -50,13 +56,13 @@ def main():
 
     # 样品的数据来源
     train_pot_folder = []
-    train_pot_folder.append(f"{DATA_SET_FOLDER}/PotSimple")
-    # train_pot_folder.append(f"{DATA_SET_FOLDER}/PotTrain")
+    # train_pot_folder.append(f"{DATA_SET_FOLDER}/PotSimple")
+    train_pot_folder.append(f"{DATA_SET_FOLDER}/PotTrain")
     # train_pot_folder.append(f"{DATA_SET_FOLDER}/PotTest")
     test_pot_folder = []
-    # test_pot_folder.append(f"{DATA_SET_FOLDER}/PotTest")
+    test_pot_folder.append(f"{DATA_SET_FOLDER}/PotTest")
     # test_pot_folder.append(f"{DATA_SET_FOLDER}/PotSimple")
-    test_pot_folder.append(f"{DATA_SET_FOLDER}/PotSimpleTest")
+    # test_pot_folder.append(f"{DATA_SET_FOLDER}/PotSimpleTest")
     # pot_folder.append(f"{DATA_SET_FOLDER}/PotTest")
     # pot_folder.append(f"{DATA_SET_FOLDER}/PotTrain")
 
