@@ -29,6 +29,7 @@ import os
 def main():
     ## 数据集目录
     if os.environ["DATA_SET_FOLDER"]:
+        # /gemini/data-1
         DATA_SET_FOLDER = os.environ["DATA_SET_FOLDER"]
     else:
         DATA_SET_FOLDER = "work/data/HWDB_pot"
