@@ -52,17 +52,18 @@ class Pot(object):
         '''
         return self.__current_pot
 
-    def __init__(self, pot_folder, outter_labels : list[str] = None):
+    def __init__(self, pot_folder, chineses_only : bool=True):
         '''
         pot_folder 存放.pot 文件的文件夹
 
-        outter_labels 训练集的标签
+        chineses_only : bool=True 是否只获取中文字符
         '''
         self.__pot_folder = pot_folder
         self.__pot_files = []
         temp_label = []
         char_count = 0
         self.__file_count = 0
+        self.__chinese_only = chineses_only
 
         ## 统计所有pot文件中的 字符总数 和 标签种类
         for file_name in os.listdir(pot_folder):
@@ -70,7 +71,7 @@ class Pot(object):
                 self.__file_count += 1
                 file_path = os.path.join(pot_folder, file_name)
                 self.__pot_files.append(file_path)
-                labels, count = self.caculate_pot_file(file_path, outter_labels)
+                labels, count = self.caculate_pot_file(file_path)
                 temp_label.extend(labels)
                 char_count += count
 
@@ -85,7 +86,18 @@ class Pot(object):
         self.__current_pot : BufferedReader = None
 
 
-    def caculate_pot_file(self, pot_file : str, outter_labels : list[str] = None):
+
+    def is_chinese(self, char):
+        '''
+        是否为中文字符
+        '''
+        if '\u4e00' <= char <= '\u9fff':
+            return True
+        else:
+            return False
+
+
+    def caculate_pot_file(self, pot_file : str):
         ''' 
         统计一个pot文件，里面有多少样品、字符种类
         '''
@@ -110,16 +122,13 @@ class Pot(object):
             pre += 4
             tagcode = struct.pack('>H', tagcode).decode('gbk')
             tagcode = tagcode.replace('\x00', '')
-            if outter_labels is not None:
-                if outter_labels.__contains__(tagcode):
+            if self.__chinese_only:
+                if self.is_chinese(tagcode):
                     labels.add(tagcode)
-                else:
-                    if pre >= len(header):
-                        break;
-                    continue
+                    char_count += 1
             else:
                 labels.add(tagcode)
-            char_count += 1
+                char_count += 1
             if pre >= len(header):
                 break;
     
@@ -149,76 +158,58 @@ class Pot(object):
 
 
 
-    def next_chat_from_buffer(self, file_buffer : BufferedReader, need_image = True):
+    def next_chat_from_buffer(self, file_buffer : BufferedReader):
         '''
         根据文件流逐个读取下一个字符
         '''
         img, tagcode = None, None
+        # 文件头，交代了该sample所占的字节数以及label以及笔画数
+        header = np.fromfile(file_buffer, dtype='uint8', count=8)
+        if not header.size: 
+            return None, None
+        sample_size = header[0] +(header[1]<<8)
+        tagcode = header[2] + (header[3]<<8) + (header[4]<<16) + (header[5]<<24)
+        tagcode = struct.pack('>H', tagcode).decode('gbk')
+        tagcode = tagcode.replace('\x00', '')
+        stroke_num = header[6] + (header[7]<<8)
+        img = None
+        
+        # 以下是参考官方POTView的C++源码View部分的Python解析代码
+        traj = []
+        xmin, ymin, xmax, ymax = 100000, 100000, 0, 0
+        for i in range(stroke_num):
+            while True:
+                header = np.fromfile(file_buffer, dtype='int16', count=2)
+                x, y = header[0], header[1]
+                traj.append([x, y])
+                
+                if x == -1 and y == 0:
+                    break
+                else:
+                    # 个人理解此处的作用是找到描述该字符的采样点的xmin,ymin,xmax,ymax
+                    # 但此处若采用源码的逻辑if x < xmin: xmin = x, else if x > xmax: xmax = x会出现了bug
+                    # 如果points中x或y是递减的，由于不会执行else判断，会导致xmax或ymax始终为0
+                    if x < xmin: xmin = x
+                    if x > xmax: xmax = x
+                    if y < ymin: ymin = y
+                    if y > ymax: ymax = y
+        # 最后还一个标志文件结尾的(-1, -1)
+        header = np.fromfile(file_buffer, dtype='int16', count=2)
+        
+        # 根据得到的采样点重构出样本
+        x_shift, y_shift = 5, 5 # 画线是有thickness的，所以上下左右多padding几格
 
-        if need_image:
+        if self.__chinese_only:
+            if not self.is_chinese(tagcode):
+                return self.next_chat_from_buffer(file_buffer)
 
-            # 文件头，交代了该sample所占的字节数以及label以及笔画数
-            header = np.fromfile(file_buffer, dtype='uint8', count=8)
-            if not header.size: 
-                return None, None
-            sample_size = header[0] +(header[1]<<8)
-            tagcode = header[2] + (header[3]<<8) + (header[4]<<16) + (header[5]<<24)
-            stroke_num = header[6] + (header[7]<<8)
-            img = None
-            
-            # 以下是参考官方POTView的C++源码View部分的Python解析代码
-            traj = []
-            xmin, ymin, xmax, ymax = 100000, 100000, 0, 0
-            for i in range(stroke_num):
-                while True:
-                    header = np.fromfile(file_buffer, dtype='int16', count=2)
-                    x, y = header[0], header[1]
-                    traj.append([x, y])
-                    
-                    if x == -1 and y == 0:
-                        break
-                    else:
-                        # 个人理解此处的作用是找到描述该字符的采样点的xmin,ymin,xmax,ymax
-                        # 但此处若采用源码的逻辑if x < xmin: xmin = x, else if x > xmax: xmax = x会出现了bug
-                        # 如果points中x或y是递减的，由于不会执行else判断，会导致xmax或ymax始终为0
-                        if x < xmin: xmin = x
-                        if x > xmax: xmax = x
-                        if y < ymin: ymin = y
-                        if y > ymax: ymax = y
-            # 最后还一个标志文件结尾的(-1, -1)
-            header = np.fromfile(file_buffer, dtype='int16', count=2)
-            
-            # 根据得到的采样点重构出样本
-            x_shift, y_shift = 5, 5 # 画线是有thickness的，所以上下左右多padding几格
-
-            canva = np.ones((ymax-ymin+2*y_shift, xmax-xmin+2*x_shift), dtype=np.uint8)*255
-            pts = np.array(traj)
-            img = self.draw_stroke(canva, pts, xmin, ymin, x_shift, y_shift)
-            
-
-            tagcode = struct.pack('>H', tagcode).decode('gbk')
-            tagcode = tagcode.replace('\x00', '')
-        else:
-            # 文件头，交代了该sample所占的字节数以及label以及笔画数
-            header = np.fromfile(file_buffer, dtype='uint8', count=8)
-            if not header.size: 
-                return None, None
-            tagcode = header[2] + (header[3]<<8) + (header[4]<<16) + (header[5]<<24)
-            stroke_num = header[6] + (header[7]<<8)
-            img = None
-            for i in range(stroke_num):
-                while True:
-                    x1, x2, y1, y2 = file_buffer.read(4)
-                    if x1 == 255 and x2 == 255 and y1 == 0 and y2 == 0:
-                        break;
-            file_buffer.read(4)
-            tagcode = struct.pack('>H', tagcode).decode('gbk')
-            tagcode = tagcode.replace('\x00', '')
-            
-
+        canva = np.ones((ymax-ymin+2*y_shift, xmax-xmin+2*x_shift), dtype=np.uint8)*255
+        pts = np.array(traj)
+        img = self.draw_stroke(canva, pts, xmin, ymin, x_shift, y_shift)
+        
         return img, tagcode
 
-    def get_data_iter(self, need_image = True):
+    def get_data_iter(self):
         '''
         获取pot图像
         need_image = False 只获取标签，
@@ -230,7 +221,7 @@ class Pot(object):
                 file_path = os.path.join(pot_dir, file_name)
                 with open(file_path, 'rb') as buffer:
                     while(True):
-                        img, tagcode = self.next_chat_from_buffer(buffer, need_image)
+                        img, tagcode = self.next_chat_from_buffer(buffer)
                         if img is None and tagcode is None:
                             break;
                         yield img, tagcode
@@ -248,7 +239,7 @@ class Pot(object):
 
 
 
-    def next(self, need_image : bool = True):
+    def next(self):
         ''' 
         获取下一个图像   
         need_image = False 只获取标签，
@@ -262,7 +253,7 @@ class Pot(object):
             file_path = self.__pot_files[self.__pot_file_index]
             self.__current_pot = open(file_path, 'rb')
 
-        img, tagcode = self.next_chat_from_buffer(file_buffer=self.__current_pot, need_image=need_image)
+        img, tagcode = self.next_chat_from_buffer(file_buffer=self.__current_pot)
         
         # 文件头，交代了该sample所占的字节数以及label以及笔画数
         if img is None and tagcode is None:

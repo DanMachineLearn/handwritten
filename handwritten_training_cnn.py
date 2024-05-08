@@ -3,7 +3,7 @@
 @File		:	handwritten_training.py
 @Time		:	2024/05/06 16:18:50
 @Author		:	dan
-@Description:	训练手写识别模型（使用神经网络）
+@Description:	训练手写识别模型（使用卷积神经网络）
 ''' 
 
 from handwritten_model import HandWrittenModel
@@ -16,7 +16,13 @@ from alive_progress import alive_bar
 # from jpg_to_4_direction_transform import JpgToImgTransform
 # from img_to_grad_12_transform import ImgToGrad12Transform
 from handwritten_grad_12_csv_dataset import HandWrittenGrad12CsvDataSet
+from handwritten_model_cnn import HandWrittenCnnModel
+from handwritten_pot_dataset import HandWrittenDataSet
+from img_to_64_64_transform import ImgTo64Transform
 from img_to_grad_12_transform import ImgToGrad12Transform
+from to_one_hot_transform import ToOneHot
+from to_tensor_transform import ToTensor
+from torch.utils.data import IterableDataset
 
 def main():
     ## 数据集目录
@@ -37,43 +43,50 @@ def main():
     # 测试组的数量
     test_size = 20
     # 循环训练的次数
-    num_epochs = 30
+    num_epochs = 20
     # 前几次训练不修改学习率
     patience = 1
     optimizer = 1 # 使用adam，否则使用SDG
 
     # 样品的数据来源
     train_pot_folder = []
-    # train_pot_folder.append("D:\\Gitee\\python-learn\\work\\data\\HWDB_pot\\PotSimple")
-    # train_pot_folder.append("D:\\Gitee\\python-learn\\work\\data\\HWDB_pot\\PotTrain")
-    train_pot_folder.append(f"{DATA_SET_FOLDER}/PotTest")
+    train_pot_folder.append(f"{DATA_SET_FOLDER}/PotSimple")
+    # train_pot_folder.append(f"{DATA_SET_FOLDER}/PotTrain")
+    # train_pot_folder.append(f"{DATA_SET_FOLDER}/PotTest")
     test_pot_folder = []
-    # test_pot_folder.append("D:\\Gitee\\python-learn\\work\\data\\HWDB_pot\\PotTest")
-    test_pot_folder.append(f"{DATA_SET_FOLDER}/PotSimple")
-    # test_pot_folder.append("D:\\Gitee\\python-learn\\work\\data\\HWDB_pot\\PotSimpleTest")
-    # pot_folder.append("D:\\Gitee\\python-learn\\work\\data\\HWDB_pot\\PotTest")
-    # pot_folder.append("D:\\Gitee\\python-learn\\work\\data\\HWDB_pot\\PotTrain")
+    # test_pot_folder.append(f"{DATA_SET_FOLDER}/PotTest")
+    # test_pot_folder.append(f"{DATA_SET_FOLDER}/PotSimple")
+    test_pot_folder.append(f"{DATA_SET_FOLDER}/PotSimpleTest")
+    # pot_folder.append(f"{DATA_SET_FOLDER}/PotTest")
+    # pot_folder.append(f"{DATA_SET_FOLDER}/PotTrain")
 
     import time
     start_time = time.time()
     ## 加载数据集
-    # transform = ImgToGrad12Transform()
-    # train_dataset = HandWrittenDataSet(pot_folders=train_pot_folder, transform=transform)
-    # test_dataset = HandWrittenDataSet(pot_folders=test_pot_folder, outter_labels=train_dataset.labels, transform=transform)
 
-    dataset = HandWrittenGrad12CsvDataSet(csv_folders=[f"{DATA_SET_FOLDER}/Grad-12-csv"])
-    train_dataset = dataset.train_dataset
-    test_dataset = dataset.test_dataset
+    x_transforms = [ImgTo64Transform(need_dilate=False), ToTensor(tensor_type=torch.float32)]
+    y_transforms = [ToTensor(tensor_type=torch.long)]
 
+    train_dataset = HandWrittenDataSet(
+        pot_folders=train_pot_folder, 
+        x_transforms=x_transforms,
+        y_transforms=y_transforms)
+    
+    test_dataset = HandWrittenDataSet(
+        pot_folders=test_pot_folder, 
+        outter_labels=train_dataset.labels,
+        x_transforms=x_transforms,
+        y_transforms=y_transforms)
 
-    train_loader = DataLoader(train_dataset, batch_size=batch_size, shuffle=True)
+    shuffle = not isinstance(train_dataset, IterableDataset) 
+    train_loader = DataLoader(train_dataset, batch_size=batch_size, shuffle=shuffle)
     test_loader = DataLoader(test_dataset, batch_size=batch_size, shuffle=False)
     # print("打开pot文件数量: ", train_dataset.file_count + test_dataset.file_count)
-    print("打开csv文件数量: ", dataset.file_count)
+    print("打开csv文件数量: ", train_dataset.file_count + test_dataset.file_count)
     print("打开所有csv文件总耗时: ", '{:.2f} s'.format(time.time() - start_time))
 
     ## 创建模型
-    model = HandWrittenModel(input_features=train_dataset.feature_count, output_classes=len(train_dataset.labels))
+    model = HandWrittenCnnModel(input_shape=x_transforms[0].input_shape, output_classes=len(train_dataset.labels))
 
 
     ## 创建学习器
@@ -110,35 +123,41 @@ def main():
     i = 0
     for epoch in range(num_epochs):
 
-        print(f"训练循环第{epoch + 1}个:")
+        print(f"训练循环第{epoch + 1}/{num_epochs}个:")
         ## 用于输出训练的总进度
         model.train()  # 设置为训练模式
         # train_size = int(len(train_dataset) / batch_size)
         with alive_bar(len(train_loader)) as bar:
-            for inputs, real_y in train_loader:
-                outputs = model(inputs)  # 前向传播
-                loss = criterion(outputs, real_y) 
+            for inputs, real_y in iter(train_loader):
+                test_output = model(inputs)  # 前向传播
+                loss = criterion(test_output, real_y) 
                 loss.backward(retain_graph=False)  # 反向传播，不累计梯度
                 optimizer.step()
                 optimizer.zero_grad()  # 清空梯度
-                # if i % 1000 == 0:
-                #     print(f"Epoch {epoch + 1}/{num_epochs}, Train Loss: {loss.item():.4f}, Process: {process / train_count * 100:.1f}%")
+                # if i % 10 == 0:
+                #     print(f"当前 Loss: {loss.item():.4f}")
+                i+=1
                 # 显示进度条
                 bar()
         # 计算验证损失
         model.eval()  # 设置为评估模式
         test_loss, correct = 0, 0
-        size = len(test_loader.dataset)
-        num_batchs = len(test_loader)
+        # size = len(test_loader.dataset)
+        # num_batchs = len(test_loader)
+        size = len(train_loader.dataset)
+        num_batchs = len(train_loader)
         with torch.no_grad():
-            for test_inputs, test_labels in test_loader:
-                outputs = model(test_inputs)
-                val_loss = criterion(outputs, test_labels)
+            # for test_X, test_y in iter(test_loader):
+            for test_X, test_y in iter(train_loader):
+                test_output : torch.Tensor = model(test_X)
+                val_loss = criterion(test_output, test_y)
                 test_loss += val_loss.item()
-                correct += (outputs.argmax(1) == test_labels).type(torch.float).sum().item()
+
+                max_args = test_output.argmax(dim = 1)
+                correct += (test_output.argmax(1) == test_y).type(torch.float).sum().item()
         test_loss /= num_batchs
         correct /= size
-        print(f"Test Error: \n Accuracy: {100 * correct:>01f}%, Avg loss: {test_loss:>8f}\n")
+        print(f"测试集: \n 准确率: {100 * correct:>01f}%, 平均 Loss: {test_loss:>8f}\n")
 
         # 根据验证损失调整学习率
         # 一般来说，如果学习率调整的频率与 epoch 相关，每个 epoch 后都应调用一次 scheduler.step()；
@@ -149,16 +168,17 @@ def main():
     torch.save(model.state_dict(), f"{MODEL_FOLDER}/handwritten_nn.pth")
 
     all_classes = train_dataset.labels
-    jpg_transform = ImgToGrad12Transform()
-    import cv2
-    features = jpg_transform(cv2.imread("handwritten_chinese.jpg", cv2.IMREAD_GRAYSCALE))
-    features = features.reshape((1, -1))
+    
+    test_x = "handwritten_chinese.jpg"
+    for x_tran in x_transforms:
+        test_x = x_tran(test_x)
+    test_x = test_x.reshape((1, test_x.shape[0], test_x.shape[1], test_x.shape[2]))
 
     ## 预测结果
     model.eval()
     start_time = time.time()
     with torch.no_grad():
-        pred = model(features)
+        pred = model(test_x)
         max = pred[0].argmax(0).item()
         predicted = all_classes[max]
         print(f'预测值: "{predicted}"')

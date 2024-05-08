@@ -17,7 +17,10 @@ import os
 import pandas as pd
 from torch.utils.data import IterableDataset
 from img_to_4_direction_transform import ImgTo4DirectionTransform
+from img_to_64_64_transform import ImgTo64Transform
 from pot import Pot
+from to_one_hot_transform import ToOneHot
+from to_tensor_transform import ToTensor
 
 
 
@@ -29,11 +32,11 @@ class HandWrittenDataSet(IterableDataset):
 
 
     @property
-    def transform(self) -> any:
+    def x_transforms(self) -> any:
         '''
         图像提取特征的工具
         '''
-        return self.__transform
+        return self.__x_transforms
 
     @property
     def feature_count(self) -> int:
@@ -61,7 +64,8 @@ class HandWrittenDataSet(IterableDataset):
                  frame_count=8, 
                  outter_labels:list[str] = None, 
                  cache_csv_file : str = None,
-                 transform = None) -> None:
+                 x_transforms : list = None,
+                 y_transforms : list = None) -> None:
         ''' 
         Parameters
         ----------
@@ -87,7 +91,7 @@ class HandWrittenDataSet(IterableDataset):
         self.__labels = []
         self.__file_count = 0
         for pot_folder in pot_folders:
-            p = Pot(pot_folder=pot_folder, outter_labels=outter_labels)
+            p = Pot(pot_folder=pot_folder, chineses_only=True)
             self.__char_count += p.char_count
             self.__pots.append(p)
             self.__labels.extend(p.labels)
@@ -96,15 +100,27 @@ class HandWrittenDataSet(IterableDataset):
             self.__labels = outter_labels
         else:
             self.__labels = sorted(set(self.__labels))
-        if transform:
-            self.__transform = transform
+        if x_transforms:
+            self.__x_transforms = x_transforms
         else:
-            self.__transform = ImgTo4DirectionTransform(frame_count)
-        # x 的特征数量，取决于转换器
-        self.__feature_count = self.__transform.feature_count
+            self.__x_transforms = [ImgTo4DirectionTransform(frame_count)]
+        if y_transforms:
+            self.__y_transforms = y_transforms
+        else:
+            self.__y_transforms = [ToTensor]
+
+        # x 的特征数量，取决于最后一个转换器
+        self.__input_shape = self.__x_transforms[-1].input_shape
+
+        ## 如果存在one hot 的转换器，需要传入总类别
+        for y_trans in self.__y_transforms:
+            if isinstance(y_trans, ToOneHot):
+                y_trans.create_encoder(list(range(0, len(self.labels))))
 
     def __iter__(self):
         self.__current_pot_index = 0
+        for p in self.__pots:
+            p.close()
         return self
     
     def __len__(self):
@@ -130,27 +146,45 @@ class HandWrittenDataSet(IterableDataset):
             # 已经没有文件了
             raise StopIteration()
         p : Pot = self.__pots[self.__current_pot_index]
-        img, tagcode = p.next()
-        if img is None and tagcode is None:
+        X, y = p.next()
+        if X is None and y is None:
             self.__current_pot_index += 1
             return self.__next__()
 
-        
-        X = self.__transform(img)
-        y = self.__labels.index(tagcode)
+        if self.__x_transforms:
+            for x_transform in self.__x_transforms:
+                X = x_transform(X)
 
-        return X, torch.tensor(y, dtype=torch.long)
+        if not self.__labels.__contains__(y):
+            return self.__next__()
+        
+        y = self.__labels.index(y)
+
+        if self.__y_transforms:
+            for y_transform in self.__y_transforms:
+                y = y_transform(y)
+
+        return X, y
             
 
 def main():
     pot_folder = []
-    pot_folder.append("D:\\Gitee\\python-learn\\work\\data\\HWDB_pot\\PotSimple")
-    pot_folder.append("D:\\Gitee\\python-learn\\work\\data\\HWDB_pot\\PotTest")
-    # pot_folder.append("D:\\Gitee\\python-learn\\work\\data\\HWDB_pot\\PotTrain")
+    pot_folder.append("work/data/HWDB_pot/potSimple")
+    # pot_folder.append("work/data/HWDB_pot/PotTest")
+    # pot_folder.append("work/data/HWDB_pot/PotTrain")
 
     import time
     start_time = time.time()
-    dataset = HandWrittenDataSet(pot_folders=pot_folder)
+    dataset = HandWrittenDataSet(
+        pot_folders=pot_folder, 
+        x_transforms=[ImgTo64Transform(need_dilate=False)],
+        y_transforms=[ToTensor(tensor_type=torch.long)])
+    
+    for X, y in dataset:
+        cv.imshow("X", X)
+        if cv.waitKey(-1) == ord('q'):
+            break;
+
     len(dataset)
     print("字符总数: ", len(dataset))
     print("打开pot文件数量: ", dataset.file_count)
