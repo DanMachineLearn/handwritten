@@ -27,26 +27,27 @@ from torch.utils.data import IterableDataset
 import os
 
 def main():
+
     ## 数据集目录
     # /gemini/data-1
-    DATA_SET_FOLDER = os.environ["DATA_SET_FOLDER"] if os.environ["DATA_SET_FOLDER"] else "work/data/HWDB_pot"
+    DATA_SET_FOLDER = os.environ["DATA_SET_FOLDER"] if os.environ.__contains__("DATA_SET_FOLDER") else "work/data/HWDB_pot"
     ## 模型目录
     # /gemini/pretrain
-    MODEL_FOLDER = os.environ["MODEL_FOLDER"] if os.environ["MODEL_FOLDER"] else ""
+    MODEL_FOLDER = os.environ["MODEL_FOLDER"] if os.environ.__contains__("MODEL_FOLDER") else ""
     # 初始的学习率
-    init_ln = float(os.environ["INIT_LN"] if os.environ["INIT_LN"] else 0.001)
+    init_ln = float(os.environ["INIT_LN"] if os.environ.__contains__("INIT_LN") else 0.001)
     # 最低的学习率
-    min_ln = float(os.environ["MIN_LN"] if os.environ["MIN_LN"] else 0.0001)
+    min_ln = float(os.environ["MIN_LN"] if os.environ.__contains__("MIN_LN") else 0.0001)
     # 每次训练的批次
-    batch_size = int(os.environ["BATCH_SIZE"] if os.environ["BATCH_SIZE"] else 512)
+    batch_size = int(os.environ["BATCH_SIZE"] if os.environ.__contains__("BATCH_SIZE") else 512)
     # 循环训练的次数
-    num_epochs = int(os.environ["NUM_EPOCHS"] if os.environ["NUM_EPOCHS"] else 20)
+    num_epochs = int(os.environ["NUM_EPOCHS"] if os.environ.__contains__("NUM_EPOCHS") else 20)
     # 前几次训练不修改学习率
-    patience = int(os.environ["PATIENCE"] if os.environ["PATIENCE"] else 1)
+    patience = int(os.environ["PATIENCE"] if os.environ.__contains__("PATIENCE") else 1)
     # 训练数据集的文件夹
-    train_folder = os.environ["TRAIN_FOLDER"] if os.environ["TRAIN_FOLDER"] else "PotTrain"
+    train_folder = os.environ["TRAIN_FOLDER"] if os.environ.__contains__("TRAIN_FOLDER") else "PotTrain"
     # 测试数据集的文件夹
-    test_folder = os.environ["TEST_FOLDER"] if os.environ["TEST_FOLDER"] else "PotTest"
+    test_folder = os.environ["TEST_FOLDER"] if os.environ.__contains__("TEST_FOLDER") else "PotTest"
 
     optimizer = 1 # 使用adam，否则使用SDG
 
