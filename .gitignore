@@ -161,3 +161,8 @@ cython_debug/
 
 
 work
+pretrain
+.ttf
+.TTF
+.ttc
+.TTC

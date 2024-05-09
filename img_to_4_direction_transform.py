@@ -26,15 +26,18 @@ class ImgTo4DirectionTransform:
     '''
     pot数据转4方向线素数据
     '''
-    def __init__(self, frame_count : int = 8) -> None:
+    def __init__(self, frame_count : int = 8, show_plt : bool = False) -> None:
         ''' 
         Parameters
         ----------
         frame_count 表示提取方向线素之后，每行和每列分别平均划分多少个方格
+
+        show_plt 是否显示plt图
         
         '''
         self.__frame_count = frame_count
         self.__feature_count = frame_count * frame_count * 4
+        self.__show_plt = show_plt
         pass
 
 
@@ -194,7 +197,7 @@ class ImgTo4DirectionTransform:
         return direction_sum.flatten()
 
 
-    def get_direction_sums(self, image : np.ndarray, show_plt : bool = False, need_dilate : bool = True):
+    def get_direction_sums(self, image : np.ndarray, need_dilate : bool = True):
         ''' 获取图像的4个方向线素特征，一共返回8 * 8 * 4 大小的特征向量
         
         Parameters
@@ -276,10 +279,10 @@ class ImgTo4DirectionTransform:
         for grad_img in grad_images:
             sum_direction = self.get_direction_sum_from_grad_image(grad_img)
             sum_directions.extend(sum_direction)
-        if show_plt:
+        if self.__show_plt:
             print(sum_directions)
 
-        if show_plt:
+        if self.__show_plt:
 
             # 4. 显示处理后的图像
             plt.figure(figsize=(12, 6))
@@ -334,9 +337,18 @@ class ImgTo4DirectionTransform:
 
 
     def __call__(self, img : np.ndarray):
+        if isinstance(img, str):
+            img = cv.imread(img, cv.IMREAD_GRAYSCALE)
         features = self.get_direction_sums(img)
         features = np.array(features).flatten()
         features = torch.tensor(features, dtype=torch.float32)
         return features
 
 
+def main():
+    transform = ImgTo4DirectionTransform(show_plt=True)
+    transform(img="handwritten_chinese.jpg")
+    pass
+
+if __name__ == '__main__':
+    main()
