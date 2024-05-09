@@ -31,7 +31,7 @@ def main():
     DOWNLOAD = bool(os.environ["DOWNLOAD"] if os.environ.__contains__("DOWNLOAD") else True)
 
     # 下载的地址
-    DOWNLOAD_URL = os.environ["DOWNLOAD"] if os.environ.__contains__("DOWNLOAD") else "https://gonsin-common.oss-cn-shenzhen.aliyuncs.com/handwritten/"
+    DOWNLOAD_URL = os.environ["DOWNLOAD"] if os.environ.__contains__("DOWNLOAD") else "https://gonsin-common.oss-cn-shenzhen.aliyuncs.com/handwritten"
 
     if DOWNLOAD:
         PotDownloader(download_url=DOWNLOAD_URL).start()

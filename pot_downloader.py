@@ -17,7 +17,7 @@ class PotDownloader :
     专门下载pot文件的下载器
     '''
 
-    def __init__(self, download_url : str = 'https://gonsin-common.oss-cn-shenzhen.aliyuncs.com/handwritten/', base_dir = "work") -> None:
+    def __init__(self, download_url : str = 'https://gonsin-common.oss-cn-shenzhen.aliyuncs.com/handwritten', base_dir = "work") -> None:
         ''' 
         
         Parameters
@@ -75,7 +75,7 @@ class PotDownloader :
         download_url : str 文件下载的基准网址
         '''
 
-        if self.__file_count == 0:
+        if self.__file_count != 0:
             return;
 
         FILE_LIST = {
