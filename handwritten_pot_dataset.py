@@ -6,6 +6,7 @@
 @Description:	直接读取pot文件，转成方向线素
 '''
 from io import BufferedReader
+from alive_progress import alive_bar
 import torch
 from matplotlib import pyplot as plt
 import numpy as np
@@ -21,6 +22,7 @@ from img_to_64_64_transform import ImgTo64Transform
 from pot import Pot
 from to_one_hot_transform import ToOneHot
 from to_tensor_transform import ToTensor
+import my_wget
 
 
 
@@ -84,6 +86,7 @@ class HandWrittenDataSet(IterableDataset):
             self.__cache_csv_file = pot_folders[0] + "/data_csv.csv"
         else:
             self.__cache_csv_file = cache_csv_file
+
         
         ## 统计所有的图像数据、字符数量、所有字符标签
         self.__pots = []
@@ -165,7 +168,6 @@ class HandWrittenDataSet(IterableDataset):
                 y = y_transform(y)
 
         return X, y
-            
 
 def main():
     pot_folder = []

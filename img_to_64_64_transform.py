@@ -93,3 +93,16 @@ class ImgTo64Transform:
         return resized_image
 
 
+
+
+def main():
+    test = "handwritten_chinese.jpg"
+    transform = ImgTo64Transform(need_dilate=True)
+    img = transform(test)
+    img = img.reshape((64, 64))
+    cv.imshow("img", img)
+    cv.waitKey(-1)
+    pass
+
+if __name__ == '__main__':
+    main()

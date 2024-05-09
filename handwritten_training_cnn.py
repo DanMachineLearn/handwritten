@@ -13,13 +13,12 @@ import torch.nn as nn
 import numpy as np
 from torch.utils.data import DataLoader
 from alive_progress import alive_bar
-# from jpg_to_4_direction_transform import JpgToImgTransform
-# from img_to_grad_12_transform import ImgToGrad12Transform
 from handwritten_grad_12_csv_dataset import HandWrittenGrad12CsvDataSet
 from handwritten_model_cnn import HandWrittenCnnModel
 from handwritten_pot_dataset import HandWrittenDataSet
 from img_to_64_64_transform import ImgTo64Transform
 from img_to_grad_12_transform import ImgToGrad12Transform
+from pot_downloader import PotDownloader
 from to_one_hot_transform import ToOneHot
 from to_tensor_transform import ToTensor
 from torch.utils.data import IterableDataset
@@ -28,10 +27,19 @@ import os
 
 def main():
 
+    # 是否从网站上下载
+    DOWNLOAD = bool(os.environ["DOWNLOAD"] if os.environ.__contains__("DOWNLOAD") else True)
+
+    # 下载的地址
+    DOWNLOAD_URL = os.environ["DOWNLOAD"] if os.environ.__contains__("DOWNLOAD") else "https://gonsin-common.oss-cn-shenzhen.aliyuncs.com/handwritten/"
+
+    if DOWNLOAD:
+        PotDownloader(download_url=DOWNLOAD_URL).start()
+
 
     ## 数据集目录
     # /gemini/data-1
-    DATA_SET_FOLDER = os.environ["DATA_SET_FOLDER"] if os.environ.__contains__("DATA_SET_FOLDER") else "work/data/HWDB_pot"
+    DATA_SET_FOLDER = os.environ["DATA_SET_FOLDER"] if os.environ.__contains__("DATA_SET_FOLDER") else "work"
     ## 模型目录
     # /gemini/pretrain
     MODEL_FOLDER = os.environ["MODEL_FOLDER"] if os.environ.__contains__("MODEL_FOLDER") else ""
@@ -95,9 +103,9 @@ def main():
     shuffle = not isinstance(train_dataset, IterableDataset) 
     train_loader = DataLoader(train_dataset, batch_size=batch_size, shuffle=shuffle)
     test_loader = DataLoader(test_dataset, batch_size=batch_size, shuffle=False)
-    # print("打开pot文件数量: ", train_dataset.file_count + test_dataset.file_count)
-    print("打开csv文件数量: ", train_dataset.file_count + test_dataset.file_count)
-    print("打开所有csv文件总耗时: ", '{:.2f} s'.format(time.time() - start_time))
+    # print("打开文件数量: ", train_dataset.file_count + test_dataset.file_count)
+    print("打开文件数量: ", train_dataset.file_count + test_dataset.file_count)
+    print("打开所有文件总耗时: ", '{:.2f} s'.format(time.time() - start_time))
 
     ## 创建模型
     model = HandWrittenCnnModel(input_shape=x_transforms[0].input_shape, output_classes=len(train_dataset.labels))
@@ -141,27 +149,23 @@ def main():
         print(f"训练循环第{epoch + 1}/{num_epochs}个:")
         ## 用于输出训练的总进度
         model.train()  # 设置为训练模式
+        train_loss = 0.0
         # train_size = int(len(train_dataset) / batch_size)
         with alive_bar(len(train_loader)) as bar:
             for X, y in iter(train_loader):
                 X, y = X.to(device), y.to(device)
                 test_output = model(X)  # 前向传播
                 loss = criterion(test_output, y) 
+                train_loss += loss.item()
                 loss.backward(retain_graph=False)  # 反向传播，不累计梯度
                 optimizer.step()
                 optimizer.zero_grad()  # 清空梯度
-                # if i % 10 == 0:
-                #     print(f"当前 Loss: {loss.item():.4f}")
                 i+=1
                 # 显示进度条
                 bar()
         # 计算验证损失
         model.eval()  # 设置为评估模式
         test_loss, correct = 0, 0
-        # size = len(test_loader.dataset)
-        # num_batchs = len(test_loader)
-        size = len(train_loader.dataset)
-        num_batchs = len(train_loader)
         with torch.no_grad():
             for test_X, test_y in iter(test_loader):
                 test_X, test_y = test_X.to(device), test_y.to(device)
@@ -171,8 +175,10 @@ def main():
 
                 max_args = test_output.argmax(dim = 1)
                 correct += (test_output.argmax(1) == test_y).type(torch.float).sum().item()
-        test_loss /= num_batchs
-        correct /= size
+        test_loss /= len(train_loader)
+        correct /= len(train_loader.dataset)
+        train_loss /= len(train_loader)
+        print(f"训练集: \n 平均 Loss: {train_loss:>8f}")
         print(f"测试集: \n 准确率: {100 * correct:>01f}%, 平均 Loss: {test_loss:>8f}\n")
 
         # 根据验证损失调整学习率
