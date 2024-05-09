@@ -38,7 +38,8 @@ def main():
     for file_name in os.listdir(p):
             if file_name.endswith('.pot'):
                 files.append(file_name)
-    print(f"\"{"\",\"".join(files)}\"")
+    files = "\",\"".join(files)
+    print(f"\"{files}\"")
     pass
 
 if __name__ == '__main__':
