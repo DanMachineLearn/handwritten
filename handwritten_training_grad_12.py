@@ -45,7 +45,7 @@ def main():
     MODEL_FOLDER = os.environ["MODEL_FOLDER"] if os.environ.__contains__("MODEL_FOLDER") else ""
 
     # 子线程数量
-    NUM_WORKERS = os.environ["NUM_WORKERS"] if os.environ.__contains__("NUM_WORKERS") else 1
+    NUM_WORKERS = int(os.environ["NUM_WORKERS"] if os.environ.__contains__("NUM_WORKERS") else 1)
     # 初始的学习率
     init_ln = float(os.environ["INIT_LN"] if os.environ.__contains__("INIT_LN") else 0.001)
     # 最低的学习率
