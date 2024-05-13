@@ -86,7 +86,7 @@ def main():
     start_time = time.time()
     ## 加载数据集
 
-    x_transforms = [ImgTo64Transform(need_dilate=False, need_reshape=True), ToTensor(tensor_type=torch.float32)]
+    x_transforms = [ImgTo64Transform(need_reshape=True), ToTensor(tensor_type=torch.float32)]
     y_transforms = [ToTensor(tensor_type=torch.long)]
 
     train_dataset = HandWrittenDataSet(

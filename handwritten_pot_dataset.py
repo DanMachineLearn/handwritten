@@ -64,6 +64,7 @@ class HandWrittenDataSet(IterableDataset):
     def __init__(self, 
                  pot_folders : list[str], 
                  frame_count=8, 
+                 need_label=False,
                  outter_labels:list[str] = None, 
                  cache_csv_file : str = None,
                  x_transforms : list = None,
@@ -78,8 +79,11 @@ class HandWrittenDataSet(IterableDataset):
         outter_labels 测试集的labels列表需要和训练集的相同，所以要从训练集那边传递过来
         
         cache_csv_file 第二次开始训练的时候，直接获取缓存中的数据训练
+
+        need_label=True, 是否在输出的y里面添加label
         '''
 
+        self.__need_label = need_label
         self.pot_folders = pot_folders
         self.__current_pot_index = 0
         if cache_csv_file is None:
@@ -161,11 +165,17 @@ class HandWrittenDataSet(IterableDataset):
         if not self.__labels.__contains__(y):
             return self.__next__()
         
-        y = self.__labels.index(y)
+        if not self.__need_label:
+            y = self.__labels.index(y)
+            if self.__y_transforms:
+                for y_transform in self.__y_transforms:
+                    y = y_transform(y)
 
-        if self.__y_transforms:
-            for y_transform in self.__y_transforms:
-                y = y_transform(y)
+        else:
+            index = self.__labels.index(y)
+            y = (index, y)
+
+
 
         return X, y
 
@@ -179,7 +189,7 @@ def main():
     start_time = time.time()
     dataset = HandWrittenDataSet(
         pot_folders=pot_folder, 
-        x_transforms=[ImgTo64Transform(need_dilate=False)],
+        x_transforms=[ImgTo64Transform()],
         y_transforms=[ToTensor(tensor_type=torch.long)])
     
     for X, y in dataset:

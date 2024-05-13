@@ -54,15 +54,7 @@ class ImgTo64Transform:
         if isinstance(image, str):
             image = cv.imread(image, cv.IMREAD_GRAYSCALE)
 
-        # 膨胀图像
-        if self.__need_dilate:
-            # 膨胀和腐蚀都是对于白色像素而言的，所以对于黑色的膨胀，则需要进行白色的腐蚀。
-            kernel = np.ones((5, 5), dtype=np.uint8) # 卷积核变为4*4
-            image = cv.erode(image, kernel, iterations=1)
-
-
         resized_image = remap(image=image, target_size=(64, 64), show_plt=False)
-
 
         # 3. 调整图像大小
         if self.__need_reshape:
@@ -74,7 +66,7 @@ class ImgTo64Transform:
 
 def main():
     test = "handwritten_chinese.jpg"
-    transform = ImgTo64Transform(need_dilate=True)
+    transform = ImgTo64Transform()
     img = transform(test)
     img = img.reshape((64, 64))
     cv.imshow("img", img)
