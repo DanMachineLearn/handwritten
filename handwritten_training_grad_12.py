@@ -43,6 +43,9 @@ def main():
     ## 模型目录
     # /gemini/pretrain
     MODEL_FOLDER = os.environ["MODEL_FOLDER"] if os.environ.__contains__("MODEL_FOLDER") else ""
+
+    # 子线程数量
+    NUM_WORKERS = os.environ["NUM_WORKERS"] if os.environ.__contains__("NUM_WORKERS") else 1
     # 初始的学习率
     init_ln = float(os.environ["INIT_LN"] if os.environ.__contains__("INIT_LN") else 0.001)
     # 最低的学习率
@@ -101,7 +104,7 @@ def main():
         y_transforms=y_transforms)
 
     shuffle = not isinstance(train_dataset, IterableDataset) 
-    train_loader = DataLoader(train_dataset, batch_size=batch_size, shuffle=shuffle)
+    train_loader = DataLoader(train_dataset, batch_size=batch_size, shuffle=shuffle, num_workers=NUM_WORKERS)
     test_loader = DataLoader(test_dataset, batch_size=batch_size, shuffle=False)
     # print("打开文件数量: ", train_dataset.file_count + test_dataset.file_count)
     print("打开文件数量: ", train_dataset.file_count + test_dataset.file_count)
@@ -194,7 +197,7 @@ def main():
     test_x = "handwritten_chinese.jpg"
     for x_tran in x_transforms:
         test_x = x_tran(test_x)
-    test_x = test_x.reshape((1, test_x.shape[0], test_x.shape[1], test_x.shape[2]))
+    test_x = test_x.reshape((1, test_x.shape[0]))
 
     ## 预测结果
     model.eval()
