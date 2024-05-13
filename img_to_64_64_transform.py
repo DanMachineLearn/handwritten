@@ -66,13 +66,6 @@ class ImgTo64Transform:
             # image = cv2.dilate(image, kernel, iterations=1)
             # image = 255 - image
 
-        # # 计算图像的重心
-        # # 使用图像的矩计算质心
-        # moments = cv2.moments(image)
-        # center_x = int(moments['m10'] / moments['m00'])  # x 轴重心
-        # center_y = int(moments['m01'] / moments['m00'])  # y 轴重心
-
-
         # 获取非空区域的边界
         # 使用行和列求和来判断非空区域
         rows_sum = np.sum(image - 255, axis=1)
@@ -84,10 +77,37 @@ class ImgTo64Transform:
         right = len(cols_sum) - np.argmax(cols_sum[::-1] > 0)  # 最后一个非空列
         image = image[top:bottom, left:right]
 
+
+        
+        # 计算图像的重心
+        # 使用图像的矩计算质心
+        moments = cv.moments(image)
+        center_x = int(moments['m10'] / moments['m00'])  # x 轴重心
+        center_y = int(moments['m01'] / moments['m00'])  # y 轴重心
+        left_top = image[0 : center_y, 0 : center_x]
+        left_bottom = image[center_y : image.shape[0], 0 : center_x]
+        right_top = image[0 : center_y, center_x : image.shape[1]]
+        right_bottom = image[center_y : image.shape[0], center_x : image.shape[1]]
+
+        left_top = cv.resize(left_top, (32, 32), interpolation=cv.INTER_LINEAR)
+        left_bottom = cv.resize(left_bottom, (32, 32), interpolation=cv.INTER_LINEAR)
+        right_top = cv.resize(right_top, (32, 32), interpolation=cv.INTER_LINEAR)
+        right_bottom = cv.resize(right_bottom, (32, 32), interpolation=cv.INTER_LINEAR)
+
+        resized_image = np.zeros((64, 64))
+        resized_image[0 : 32, 0 : 32] = left_top
+        resized_image[32 : 64, 0 : 32] = left_bottom
+        resized_image[0 : 32, 32 : 64] = right_top
+        resized_image[32 : 64, 32 : 64] = right_bottom
+        resized_image = resized_image.astype(np.uint8)
+
+        ## 使用直方图均衡化
+        resized_image = cv.equalizeHist(resized_image)
+
         # 3. 调整图像大小
         # 将图像调整为 65x65
         # TODO 此处需要补充 根据质点调整大小的算法
-        resized_image = cv.resize(image, (64, 64), interpolation=cv.INTER_LINEAR)
+        # resized_image = cv.resize(image, (64, 64), interpolation=cv.INTER_LINEAR)
         resized_image = resized_image.reshape((1, 64, 64))
         # resized_image = torch.tensor(resized_image, dtype=torch.uint8)
         return resized_image
