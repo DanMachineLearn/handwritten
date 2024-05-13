@@ -1,10 +1,10 @@
 # -*- encoding: utf-8 -*-
 '''
-@File		:	handwritten_training.py
-@Time		:	2024/05/06 16:18:50
+@File		:	handwritten_training_grad_12.py
+@Time		:	2024/05/13 15:25:42
 @Author		:	dan
-@Description:	训练手写识别模型（使用卷积神经网络）
-''' 
+@Description:	使用神经网络，训练grad-12数据
+'''
 
 from handwritten_model import HandWrittenModel
 import torch
@@ -86,7 +86,7 @@ def main():
     start_time = time.time()
     ## 加载数据集
 
-    x_transforms = [ImgTo64Transform(need_dilate=False, need_reshape=True), ToTensor(tensor_type=torch.float32)]
+    x_transforms = [ImgTo64Transform(need_dilate=False), ImgToGrad12Transform(), ToTensor(tensor_type=torch.float32)]
     y_transforms = [ToTensor(tensor_type=torch.long)]
 
     train_dataset = HandWrittenDataSet(
@@ -108,7 +108,7 @@ def main():
     print("打开所有文件总耗时: ", '{:.2f} s'.format(time.time() - start_time))
 
     ## 创建模型
-    model = HandWrittenCnnModel(input_shape=x_transforms[0].input_shape, output_classes=len(train_dataset.labels))
+    model = HandWrittenModel(input_features=ImgToGrad12Transform.INPUT_FEATURES, output_classes=len(train_dataset.labels))
     model = model.to(device)
 
 
