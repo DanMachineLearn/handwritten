@@ -94,13 +94,12 @@ class HandWrittenDatasetCsvGrad12(IterableDataset):
         # 读取最后一行获取行数
         data_frame = pd.read_csv(data_csv_path)
         bottom : pd.Series = data_frame.tail(1)
-        bottom = bottom['index']
+        bottom = bottom['id']
         all_chat_count = int(bottom.iloc[0]) + 1
         if max_length is not None:
             self.__char_count = min(all_chat_count - start_index, max_length)
         else:
             self.__char_count = all_chat_count - start_index
-        self.__char_count = int(bottom.iloc[0]) + 1
 
         # # 读取第一批数据
         # data_frame = pd.read_csv(data_csv_path, nrows=batch_read_size, skiprows=0)
@@ -127,7 +126,7 @@ class HandWrittenDatasetCsvGrad12(IterableDataset):
                                  skiprows=self.__read_length)
         else:
             data_frame = pd.read_csv(self.__data_csv_path, 
-                                 names=["index", "XX", "yy", "labels"],
+                                 names=["id", "XX", "yy", "labels"],
                                  header=0,
                                  nrows=self.__batch_read_size, 
                                  skiprows=self.__read_length)
@@ -136,7 +135,10 @@ class HandWrittenDatasetCsvGrad12(IterableDataset):
             raise StopIteration()
         self.__X = data_frame['XX']
         self.__y = data_frame['yy']
-        self.__read_length += len(self.__X)
+        more = len(self.__X)
+        if more == 0:
+            raise StopIteration()
+        self.__read_length += more
         pass
 
     def __next__(self):
@@ -148,7 +150,10 @@ class HandWrittenDatasetCsvGrad12(IterableDataset):
         if self.__max_length is not None:
             if self.__read_index >= self.__max_length + self.__start_index:
                 raise StopIteration()
-        index = self.__read_index
+        else:
+            if self.__read_index >= self.__char_count + self.__start_index:
+                raise StopIteration()
+        index = self.__read_index - self.__start_index
         index = index % self.__batch_read_size
         X : str = self.__X[index]
         X = X.strip('[')
@@ -186,8 +191,7 @@ def main():
     dataset = HandWrittenDatasetCsvGrad12(
         x_transforms=x_transforms,
         y_transforms=y_transforms,
-        max_length=4,
-        start_index=4,
+        start_index=30,
         data_csv_path=data_csv_path, 
         label_csv_path=labels_csv_path)
     for X, y in dataset:
