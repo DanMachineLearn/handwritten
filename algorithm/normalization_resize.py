@@ -26,7 +26,19 @@ def remap(image : np.ndarray, target_size : tuple[2] | list[2] = (64, 64), show_
     np.ndarray
 
     '''
-    target_image = cv2.resize(image, target_size, interpolation=cv2.INTER_LINEAR)
+
+    # 获取非空区域的边界
+    # 使用行和列求和来判断非空区域
+    rows_sum = np.sum(image - 255, axis=1)
+    cols_sum = np.sum(image - 255, axis=0)
+    # 找到行和列的最小和最大非空索引
+    top = np.argmax(rows_sum > 0)  # 第一个非空行
+    bottom = len(rows_sum) - np.argmax(rows_sum[::-1] > 0)  # 最后一个非空行
+    left = np.argmax(cols_sum > 0)  # 第一个非空列
+    right = len(cols_sum) - np.argmax(cols_sum[::-1] > 0)  # 最后一个非空列
+    shape_image = image[top:bottom, left:right]
+
+    target_image = cv2.resize(shape_image, target_size, interpolation=cv2.INTER_LINEAR)
     
     if show_plt:
         plt.figure(figsize=(10, 5))

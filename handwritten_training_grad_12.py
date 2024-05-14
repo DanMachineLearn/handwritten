@@ -6,6 +6,7 @@
 @Description:	使用神经网络，训练grad-12数据
 '''
 
+from dataset.handwritten_dataset_csv_grad_12 import HandWrittenDatasetCsvGrad12
 from handwritten_model import HandWrittenModel
 import torch
 import torch.optim as optim
@@ -15,7 +16,7 @@ from torch.utils.data import DataLoader
 from alive_progress import alive_bar
 from handwritten_grad_12_csv_dataset import HandWrittenGrad12CsvDataSet
 from handwritten_model_cnn import HandWrittenCnnModel
-from handwritten_pot_dataset import HandWrittenDataSet
+from dataset.handwritten_pot_dataset import HandWrittenDataSet
 from img_to_64_64_transform import ImgTo64Transform
 from img_to_grad_12_transform import ImgToGrad12Transform
 from pot_downloader import PotDownloader
@@ -56,10 +57,12 @@ def main():
     num_epochs = int(os.environ["NUM_EPOCHS"] if os.environ.__contains__("NUM_EPOCHS") else 5)
     # 前几次训练不修改学习率
     patience = int(os.environ["PATIENCE"] if os.environ.__contains__("PATIENCE") else 1)
-    # 训练数据集的文件夹
-    train_folder = os.environ["TRAIN_FOLDER"] if os.environ.__contains__("TRAIN_FOLDER") else "PotSimple"
-    # 测试数据集的文件夹
-    test_folder = os.environ["TEST_FOLDER"] if os.environ.__contains__("TEST_FOLDER") else "PotSimpleTest"
+    # 训练数据集的文件
+    DATA_CSV_FILE = os.environ["DATA_CSV_FILE"] if os.environ.__contains__("DATA_CSV_FILE") else "grad_12.csv"
+    # 测试数据集的文件
+    LABEL_CSV_FOILE = os.environ["LABEL_CSV_FOILE"] if os.environ.__contains__("LABEL_CSV_FOILE") else "grad_12.labels.csv"
+    # 测试集大小
+    TEST_SIZE = int(os.environ["TEST_SIZE"] if os.environ.__contains__("TEST_SIZE") else 512)
 
     ## 优先使用cuda
     device = (
@@ -73,41 +76,33 @@ def main():
 
     optimizer = 1 # 使用adam，否则使用SDG
 
-    # 样品的数据来源
-    train_pot_folder = []
-    # train_pot_folder.append(f"{DATA_SET_FOLDER}/PotSimple")
-    train_pot_folder.append(f"{DATA_SET_FOLDER}/{train_folder}")
-    # train_pot_folder.append(f"{DATA_SET_FOLDER}/PotTest")
-    test_pot_folder = []
-    test_pot_folder.append(f"{DATA_SET_FOLDER}/{test_folder}")
-    # test_pot_folder.append(f"{DATA_SET_FOLDER}/PotSimple")
-    # test_pot_folder.append(f"{DATA_SET_FOLDER}/PotSimpleTest")
-    # pot_folder.append(f"{DATA_SET_FOLDER}/PotTest")
-    # pot_folder.append(f"{DATA_SET_FOLDER}/PotTrain")
-
     import time
     start_time = time.time()
     ## 加载数据集
 
-    x_transforms = [ImgTo64Transform(), ImgToGrad12Transform(), ToTensor(tensor_type=torch.float32)]
+    # x_transforms = [ImgTo64Transform(), ImgToGrad12Transform(), ToTensor(tensor_type=torch.float32)]
+    x_transforms = [ToTensor(tensor_type=torch.float32)]
     y_transforms = [ToTensor(tensor_type=torch.long)]
 
-    train_dataset = HandWrittenDataSet(
-        pot_folders=train_pot_folder, 
+    train_dataset = HandWrittenDatasetCsvGrad12(
+        data_csv_path=f"{DATA_SET_FOLDER}/{DATA_CSV_FILE}", 
+        label_csv_path=f"{DATA_SET_FOLDER}/{LABEL_CSV_FOILE}",
+        start_index=TEST_SIZE,
         x_transforms=x_transforms,
         y_transforms=y_transforms)
     
-    test_dataset = HandWrittenDataSet(
-        pot_folders=test_pot_folder, 
-        outter_labels=train_dataset.labels,
+    test_dataset = HandWrittenDatasetCsvGrad12(
+        data_csv_path=f"{DATA_SET_FOLDER}/{DATA_CSV_FILE}", 
+        label_csv_path=f"{DATA_SET_FOLDER}/{LABEL_CSV_FOILE}",
+        max_length=TEST_SIZE,
         x_transforms=x_transforms,
         y_transforms=y_transforms)
 
     shuffle = not isinstance(train_dataset, IterableDataset) 
-    train_loader = DataLoader(train_dataset, batch_size=batch_size, shuffle=shuffle, num_workers=NUM_WORKERS)
+    train_loader = DataLoader(train_dataset, batch_size=batch_size, shuffle=shuffle)
     test_loader = DataLoader(test_dataset, batch_size=batch_size, shuffle=False)
     # print("打开文件数量: ", train_dataset.file_count + test_dataset.file_count)
-    print("打开文件数量: ", train_dataset.file_count + test_dataset.file_count)
+    print("打开文件数量: ", train_dataset.file_count)
     print("打开所有文件总耗时: ", '{:.2f} s'.format(time.time() - start_time))
 
     ## 创建模型
@@ -195,7 +190,8 @@ def main():
     all_classes = train_dataset.labels
     
     test_x = "handwritten_chinese.jpg"
-    for x_tran in x_transforms:
+    transforms = [ImgTo64Transform(), ImgToGrad12Transform(), ToTensor(tensor_type=torch.float32)]
+    for x_tran in transforms:
         test_x = x_tran(test_x)
     test_x = test_x.reshape((1, test_x.shape[0]))
 

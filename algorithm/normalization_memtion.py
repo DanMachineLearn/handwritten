@@ -117,7 +117,7 @@ def main():
 
 
     # 读取原始图像
-    image_path = 'handwritten_chinese2.jpg'
+    image_path = '1.png'
     image = cv2.imread(image_path, cv2.IMREAD_GRAYSCALE)
     remap(image=image, show_plt=True)
     pass

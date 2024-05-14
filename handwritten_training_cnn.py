@@ -15,7 +15,7 @@ from torch.utils.data import DataLoader
 from alive_progress import alive_bar
 from handwritten_grad_12_csv_dataset import HandWrittenGrad12CsvDataSet
 from handwritten_model_cnn import HandWrittenCnnModel
-from handwritten_pot_dataset import HandWrittenDataSet
+from dataset.handwritten_pot_dataset import HandWrittenDataSet
 from img_to_64_64_transform import ImgTo64Transform
 from img_to_grad_12_transform import ImgToGrad12Transform
 from pot_downloader import PotDownloader
