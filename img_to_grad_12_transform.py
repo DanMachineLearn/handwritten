@@ -40,7 +40,7 @@ class ImgToGrad12Transform:
 
 
     def __call__(self, img : np.ndarray):
-        features = get_features(img)
+        features = get_features(img, show_plt=self.__show_plt)
         return features
 
 

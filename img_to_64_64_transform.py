@@ -11,7 +11,7 @@ from matplotlib import pyplot as plt
 import numpy as np
 import cv2 as cv
 import torch
-from algorithm.normalization_nonlinear_global import remap
+from algorithm.normalization_nonlinear import remap
 
 
 class ImgTo64Transform:
@@ -26,7 +26,7 @@ class ImgTo64Transform:
     '''
     pot数据转64*64的图像
     '''
-    def __init__(self, need_dilate : bool = True, need_reshape = False) -> None:
+    def __init__(self, need_dilate : bool = True, need_reshape = False, show_plt = False) -> None:
         ''' 
         Parameters
         ----------
@@ -37,6 +37,7 @@ class ImgTo64Transform:
         '''
         self.__need_dilate = need_dilate
         self.__need_reshape = need_reshape
+        self.__show_plt = show_plt
         pass
 
     def __call__(self, image : np.ndarray | str):
@@ -55,6 +56,10 @@ class ImgTo64Transform:
             image = cv.imread(image, cv.IMREAD_GRAYSCALE)
 
         resized_image = remap(image=image, target_size=(64, 64), show_plt=False)
+
+        if self.__show_plt:
+            cv.imshow("image", resized_image)
+            cv.waitKey(-1)
 
         # 3. 调整图像大小
         if self.__need_reshape:
