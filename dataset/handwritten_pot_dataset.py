@@ -184,25 +184,25 @@ class HandWrittenDataSet(Dataset):
             self.__current_pot_index += 1
             return self.__next__()
 
-        if self.__x_transforms:
-            for x_transform in self.__x_transforms:
-                X = x_transform(X)
+        try:
+            if self.__x_transforms:
+                for x_transform in self.__x_transforms:
+                    X = x_transform(X)
 
-        if not self.__labels.__contains__(y):
+            if not self.__labels.__contains__(y):
+                return self.__next__()
+            
+            if not self.__need_label:
+                y = self.__labels.index(y)
+                if self.__y_transforms:
+                    for y_transform in self.__y_transforms:
+                        y = y_transform(y)
+
+            else:
+                index = self.__labels.index(y)
+                y = (index, y)
+        except:
             return self.__next__()
-        
-        if not self.__need_label:
-            y = self.__labels.index(y)
-            if self.__y_transforms:
-                for y_transform in self.__y_transforms:
-                    y = y_transform(y)
-
-        else:
-            index = self.__labels.index(y)
-            y = (index, y)
-
-
-
         return X, y
 
 def main():
