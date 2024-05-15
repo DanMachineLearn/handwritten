@@ -84,22 +84,10 @@ class HandWrittenDatasetCsvGrad12(IterableDataset):
         '''
         
         self.__data_csv_path = data_csv_path
-        self.__batch_read_size = batch_read_size
+        # self.__batch_read_size = batch_read_size
         self.__read_index = start_index
-        self.__read_length = start_index
         self.__start_index = start_index
         self.__max_length = max_length
-
-
-        # 读取最后一行获取行数
-        data_frame = pd.read_csv(data_csv_path)
-        bottom : pd.Series = data_frame.tail(1)
-        bottom = bottom['id']
-        all_chat_count = int(bottom.iloc[0]) + 1
-        if max_length is not None:
-            self.__char_count = min(all_chat_count - start_index, max_length)
-        else:
-            self.__char_count = all_chat_count - start_index
 
         # # 读取第一批数据
         # data_frame = pd.read_csv(data_csv_path, nrows=batch_read_size, skiprows=0)
@@ -115,6 +103,7 @@ class HandWrittenDatasetCsvGrad12(IterableDataset):
         self.__labels = labels_data_frame['labels']
 
         self.read_next()
+        self.__char_count = len(self.__X)
         pass
 
 
@@ -122,16 +111,16 @@ class HandWrittenDatasetCsvGrad12(IterableDataset):
         ''' 
         读取下一批
         '''
-        if self.__read_length == 0:
+        if self.__start_index == 0:
             data_frame = pd.read_csv(self.__data_csv_path, 
-                                 nrows=self.__batch_read_size, 
-                                 skiprows=self.__read_length)
+                                 nrows=self.__max_length, 
+                                 skiprows=self.__start_index)
         else:
             data_frame = pd.read_csv(self.__data_csv_path, 
                                  names=["id", "XX", "yy", "labels"],
                                  header=0,
-                                 nrows=self.__batch_read_size, 
-                                 skiprows=self.__read_length)
+                                 nrows=self.__max_length, 
+                                 skiprows=self.__start_index)
             
         if not data_frame.columns.__contains__('XX'):
             raise StopIteration()
@@ -140,7 +129,6 @@ class HandWrittenDatasetCsvGrad12(IterableDataset):
         more = len(self.__X)
         if more == 0:
             raise StopIteration()
-        self.__read_length += more
         pass
 
     def __next__(self):
@@ -149,21 +137,14 @@ class HandWrittenDatasetCsvGrad12(IterableDataset):
         '''
         # if self.__read_index >= self.__read_length:
         #     self.read_next()
-        if self.__max_length is not None:
-            if self.__read_index >= self.__max_length + self.__start_index:
-                raise StopIteration()
-        else:
-            if self.__read_index >= self.__char_count + self.__start_index:
-                raise StopIteration()
-        index = self.__read_index - self.__start_index
-        if self.__batch_read_size is not None:
-            index = index % self.__batch_read_size
+        if self.__read_index >= len(self.__X):
+            raise StopIteration()
+        index = self.__read_index
         X : str = self.__X[index]
         X = X.strip('[')
         X = X.strip(']')
         X = X.split(',')
         X = np.array(X, dtype=np.float32)
-
         y = self.__y[index]
         self.__read_index += 1
 
@@ -178,8 +159,7 @@ class HandWrittenDatasetCsvGrad12(IterableDataset):
         return X, y
 
     def __iter__(self) :
-        self.__read_index = self.__start_index
-        # self.__read_length = self.__start_index
+        self.__read_index = 0
         return self
 
     def __len__(self):
