@@ -12,7 +12,7 @@ import torch.nn as nn
 import numpy as np
 from torch.utils.data import DataLoader
 from alive_progress import alive_bar
-from models.handwritten_model_cnn import HandWrittenCnnModel
+from models.HCCRGoogLeNetModel import GaborGoogLeNet
 from dataset.handwritten_pot_dataset import HandWrittenDataSet
 from img_to_64_64_transform import ImgTo64Transform
 from img_to_grad_12_transform import ImgToGrad12Transform
@@ -20,6 +20,7 @@ from utils.pot_downloader import PotDownloader
 from algorithm.to_one_hot_transform import ToOneHot
 from algorithm.to_tensor_transform import ToTensor
 from torch.utils.data import IterableDataset
+from torchvision.models.googlenet import GoogLeNetOutputs
 
 import os
 
@@ -48,7 +49,7 @@ def main():
     # 每次训练的批次
     batch_size = int(os.environ["BATCH_SIZE"] if os.environ.__contains__("BATCH_SIZE") else 512)
     # 循环训练的次数
-    num_epochs = int(os.environ["NUM_EPOCHS"] if os.environ.__contains__("NUM_EPOCHS") else 1)
+    num_epochs = int(os.environ["NUM_EPOCHS"] if os.environ.__contains__("NUM_EPOCHS") else 20)
     # 前几次训练不修改学习率
     patience = int(os.environ["PATIENCE"] if os.environ.__contains__("PATIENCE") else 1)
     # 训练数据集的文件夹
@@ -84,7 +85,7 @@ def main():
     start_time = time.time()
     ## 加载数据集
 
-    x_transforms = [ImgTo64Transform(need_reshape=True), ToTensor(tensor_type=torch.float32)]
+    x_transforms = [ImgTo64Transform(channel_count=3), ToTensor(tensor_type=torch.float32)]
     y_transforms = [ToTensor(tensor_type=torch.long)]
 
     train_dataset = HandWrittenDataSet(
@@ -106,7 +107,7 @@ def main():
     print("打开所有文件总耗时: ", '{:.2f} s'.format(time.time() - start_time))
 
     ## 创建模型
-    model = HandWrittenCnnModel(input_shape=x_transforms[0].input_shape, output_classes=len(train_dataset.labels))
+    model = GaborGoogLeNet(num_classes=len(train_dataset.labels))
     model = model.to(device)
 
 
@@ -152,7 +153,8 @@ def main():
         with alive_bar(len(train_loader)) as bar:
             for X, y in iter(train_loader):
                 X, y = X.to(device), y.to(device)
-                test_output = model(X)  # 前向传播
+                test_output : GoogLeNetOutputs = model(X)  # 前向传播
+                test_output = test_output.logits
                 loss = criterion(test_output, y) 
                 train_loss += loss.item()
                 loss.backward(retain_graph=False)  # 反向传播，不累计梯度

@@ -20,8 +20,8 @@ from torch.utils.data import IterableDataset
 from img_to_4_direction_transform import ImgTo4DirectionTransform
 from img_to_64_64_transform import ImgTo64Transform
 from utils.pot import Pot
-from to_one_hot_transform import ToOneHot
-from to_tensor_transform import ToTensor
+from algorithm.to_one_hot_transform import ToOneHot
+from algorithm.to_tensor_transform import ToTensor
 import utils.my_wget as my_wget
 
 

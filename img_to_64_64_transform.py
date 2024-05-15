@@ -26,7 +26,7 @@ class ImgTo64Transform:
     '''
     pot数据转64*64的图像
     '''
-    def __init__(self, need_dilate : bool = True, need_reshape = False, show_plt = False) -> None:
+    def __init__(self, need_dilate : bool = True, need_reshape = False, show_plt = False, channel_count=1) -> None:
         ''' 
         Parameters
         ----------
@@ -34,10 +34,13 @@ class ImgTo64Transform:
         
         need_reshape : bool = False, 是否需要修改图像的 shape
 
+        channel_count=1 色彩通道数要么1，要么3
+
         '''
         self.__need_dilate = need_dilate
         self.__need_reshape = need_reshape
         self.__show_plt = show_plt
+        self.__channel_count = channel_count
         pass
 
     def __call__(self, image : np.ndarray | str):
@@ -64,6 +67,11 @@ class ImgTo64Transform:
         # 3. 调整图像大小
         if self.__need_reshape:
             resized_image = resized_image.reshape((1, 64, 64))
+
+        if self.__channel_count == 3:
+            resized_image = cv.cvtColor(resized_image, cv.COLOR_GRAY2RGB)
+            resized_image = resized_image.reshape((3, 64, 64))
+
         return resized_image
 
 

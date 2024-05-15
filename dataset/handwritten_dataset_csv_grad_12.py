@@ -21,7 +21,7 @@ import os
 import pandas as pd
 from torch.utils.data import IterableDataset
 
-from to_tensor_transform import ToTensor
+from algorithm.to_tensor_transform import ToTensor
 
 
 class HandWrittenDatasetCsvGrad12(IterableDataset):
