@@ -34,8 +34,14 @@ class HandWrittenDataSet(Dataset):
     '''
     中科院pot文件读取的iterator类
     '''
-
-
+    @property
+    def X(self):
+        return self.__X
+    
+    @property
+    def y(self):
+        return self.__y
+    
     @property
     def x_transforms(self) -> any:
         '''
@@ -69,8 +75,8 @@ class HandWrittenDataSet(Dataset):
                  frame_count=8, 
                  need_label=False,
                  outter_labels:list[str] = None, 
-                 cache_csv_file : str = None,
                  load_all_on_init = False, 
+                 load_from_bin = True,
                  x_transforms : list = None,
                  y_transforms : list = None) -> None:
         ''' 
@@ -87,15 +93,14 @@ class HandWrittenDataSet(Dataset):
         need_label=True, 是否在输出的y里面添加label
 
         load_all_on_init = False 是否一次将所有pot数据读取到内存，方便训练
+
+        load_from_bin = True 是否加载work目录下的二进制持久化文件
         '''
 
         self.__need_label = need_label
         self.pot_folders = pot_folders
         self.__current_pot_index = 0
-        if cache_csv_file is None:
-            self.__cache_csv_file = pot_folders[0] + "/data_csv.csv"
-        else:
-            self.__cache_csv_file = cache_csv_file
+        self.__load_all_on_init = load_all_on_init
 
         
         ## 统计所有的图像数据、字符数量、所有字符标签
@@ -103,19 +108,7 @@ class HandWrittenDataSet(Dataset):
         self.__char_count = 0
         self.__labels = []
         self.__file_count = 0
-        print("正在获取字符总数")
-        with alive_bar(len(pot_folders)) as bar:
-            for pot_folder in pot_folders:
-                p = Pot(pot_folder=pot_folder, chineses_only=True)
-                self.__char_count += p.char_count
-                self.__pots.append(p)
-                self.__labels.extend(p.labels)
-                self.__file_count += p.file_count;
-                bar()
-        if outter_labels:
-            self.__labels = outter_labels
-        else:
-            self.__labels = sorted(set(self.__labels))
+
         if x_transforms:
             self.__x_transforms = x_transforms
         else:
@@ -133,9 +126,36 @@ class HandWrittenDataSet(Dataset):
             if isinstance(y_trans, ToOneHot):
                 y_trans.create_encoder(list(range(0, len(self.labels))))
 
+        ## 直接加载bin文件
+        if load_all_on_init:
+            if load_from_bin \
+                and os.path.isfile('work/labels.bin') \
+                and os.path.isfile('work/X.bin') \
+                and os.path.isfile('work/y.bin'):
+                self.__X = torch.load('work/X.bin')
+                self.__y = torch.load('work/y.bin')
+                self.__labels = torch.load('work/labels.bin')
+                self.__char_count = len(self.__X)
+                self.__file_count = 3
+                return 
+
+        print("正在获取字符总数")
+        with alive_bar(len(pot_folders)) as bar:
+            for pot_folder in pot_folders:
+                p = Pot(pot_folder=pot_folder, chineses_only=True)
+                self.__char_count += p.char_count
+                self.__pots.append(p)
+                self.__labels.extend(p.labels)
+                self.__file_count += p.file_count;
+                bar()
+        if outter_labels:
+            self.__labels = outter_labels
+        else:
+            self.__labels = sorted(set(self.__labels))
+        
+
 
         ## 一次读取所有的pot文件到内存，加快训练速度
-        self.__load_all_on_init = load_all_on_init
         if load_all_on_init:
             self.__X = []
             self.__y = []
@@ -208,11 +228,12 @@ class HandWrittenDataSet(Dataset):
 def main():
     pot_folder = []
     pot_folder.append("work/PotSimple")
-    pot_folder.append("work/PotSimpleTest")
-    pot_folder.append("work/PotTest")
-    pot_folder.append("work/PotTrain")
+    # pot_folder.append("work/PotSimpleTest")
+    # pot_folder.append("work/PotTest")
+    # pot_folder.append("work/PotTrain")
     # pot_folder.append("work/data/HWDB_pot/PotTest")
     # pot_folder.append("work/data/HWDB_pot/PotTrain")
+
 
     import time
     start_time = time.time()
@@ -225,8 +246,13 @@ def main():
     with alive_bar(len(dataset)) as bar:
         for i in range(len(dataset)):
             X, y = dataset[i]
-        # for X, y in dataset:
             bar()
+
+
+    # 将读取的结果，持久化到硬盘，方便下次读取
+    torch.save(dataset.X, "work/X.bin")
+    torch.save(dataset.y, "work/y.bin")
+    torch.save(dataset.labels, "work/labels.bin")
 
     len(dataset)
     print("字符总数: ", len(dataset))
