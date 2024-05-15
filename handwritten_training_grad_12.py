@@ -60,6 +60,10 @@ def main():
     # 测试集大小
     TEST_SIZE = int(os.environ["TEST_SIZE"] if os.environ.__contains__("TEST_SIZE") else 512)
 
+    MAX_LENGTH = int(os.environ['MAX_LENGTH'] if os.environ.__contains__('MAX_LENGTH') else -1)
+    if MAX_LENGTH == -1:
+        MAX_LENGTH = None
+
     ## 优先使用cuda
     device = (
         "cuda"
@@ -84,6 +88,7 @@ def main():
         data_csv_path=f"{DATA_SET_FOLDER}/{DATA_CSV_FILE}", 
         label_csv_path=f"{DATA_SET_FOLDER}/{LABEL_CSV_FOILE}",
         start_index=TEST_SIZE,
+        max_length=MAX_LENGTH,
         x_transforms=x_transforms,
         y_transforms=y_transforms)
     
