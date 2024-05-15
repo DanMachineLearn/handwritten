@@ -44,15 +44,15 @@ def main():
     # 子线程数量
     NUM_WORKERS = int(os.environ["NUM_WORKERS"] if os.environ.__contains__("NUM_WORKERS") else 1)
     # 初始的学习率
-    init_ln = float(os.environ["INIT_LN"] if os.environ.__contains__("INIT_LN") else 0.001)
+    INIT_LN = float(os.environ["INIT_LN"] if os.environ.__contains__("INIT_LN") else 0.001)
     # 最低的学习率
-    min_ln = float(os.environ["MIN_LN"] if os.environ.__contains__("MIN_LN") else 0.0001)
+    MIN_LN = float(os.environ["MIN_LN"] if os.environ.__contains__("MIN_LN") else 0.0001)
     # 每次训练的批次
-    batch_size = int(os.environ["BATCH_SIZE"] if os.environ.__contains__("BATCH_SIZE") else 32)
+    BATCH_SIZE = int(os.environ["BATCH_SIZE"] if os.environ.__contains__("BATCH_SIZE") else 32)
     # 循环训练的次数
-    num_epochs = int(os.environ["NUM_EPOCHS"] if os.environ.__contains__("NUM_EPOCHS") else 20)
+    NUM_EPOCHS = int(os.environ["NUM_EPOCHS"] if os.environ.__contains__("NUM_EPOCHS") else 20)
     # 前几次训练不修改学习率
-    patience = int(os.environ["PATIENCE"] if os.environ.__contains__("PATIENCE") else 1)
+    PATIENCE = int(os.environ["PATIENCE"] if os.environ.__contains__("PATIENCE") else 1)
     # 训练数据集的文件
     DATA_CSV_FILE = os.environ["DATA_CSV_FILE"] if os.environ.__contains__("DATA_CSV_FILE") else "grad_12.csv"
     # 测试数据集的文件
@@ -100,8 +100,8 @@ def main():
         y_transforms=y_transforms)
 
     shuffle = not isinstance(train_dataset, IterableDataset) 
-    train_loader = DataLoader(train_dataset, batch_size=batch_size, shuffle=shuffle)
-    test_loader = DataLoader(test_dataset, batch_size=batch_size, shuffle=False)
+    train_loader = DataLoader(train_dataset, batch_size=BATCH_SIZE, shuffle=shuffle)
+    test_loader = DataLoader(test_dataset, batch_size=BATCH_SIZE, shuffle=False)
     # print("打开文件数量: ", train_dataset.file_count + test_dataset.file_count)
     print("打开文件数量: ", train_dataset.file_count)
     print("打开所有文件总耗时: ", '{:.2f} s'.format(time.time() - start_time))
@@ -116,7 +116,7 @@ def main():
         
         # lr：学习率。学习率决定了每一步优化更新的大小。较大的学习率可能导致不稳定，较小的学习率
         # 可能导致训练缓慢或停滞。
-        optimizer = optim.Adam(model.parameters(), lr=init_ln)  # 设置初始学习率
+        optimizer = optim.Adam(model.parameters(), lr=INIT_LN)  # 设置初始学习率
     else:
         # lr：学习率。学习率决定了每一步优化更新的大小。较大的学习率可能导致不稳定，较小的学习率
         # 可能导致训练缓慢或停滞。
@@ -128,7 +128,7 @@ def main():
         # 对参数施加 L2 正则化。它是一种惩罚项，通常设定为小数，如 0.0001。
         # nesterov：是否启用 Nesterov 动量。Nesterov 动量是一种改进的动量方法，考虑到梯度更新
         # 的趋势，有助于更快收敛和减少振荡。设定为 True 表示使用 Nesterov 动量。
-        optimizer = optim.SGD(model.parameters(), lr=init_ln)
+        optimizer = optim.SGD(model.parameters(), lr=INIT_LN)
     
 
 
@@ -137,15 +137,15 @@ def main():
     # criterion = nn.NLLLoss()
 
     # 使用 ReduceLROnPlateau 调度器
-    scheduler = optim.lr_scheduler.ReduceLROnPlateau(optimizer, 'min', patience=patience, factor=0.5, min_lr=min_ln)
+    scheduler = optim.lr_scheduler.ReduceLROnPlateau(optimizer, 'min', patience=PATIENCE, factor=0.5, min_lr=MIN_LN)
     # scheduler = optim.lr_scheduler.ReduceLROnPlateau(optimizer, 'min', factor=0.5)
     # scheduler = optim.lr_scheduler.StepLR(optimizer=optimizer, gamma=0.5)
 
     # 训练模型
     i = 0
-    for epoch in range(num_epochs):
+    for epoch in range(NUM_EPOCHS):
 
-        print(f"训练循环第{epoch + 1}/{num_epochs}个:")
+        print(f"训练循环第{epoch + 1}/{NUM_EPOCHS}个:")
         ## 用于输出训练的总进度
         model.train()  # 设置为训练模式
         train_loss = 0.0
