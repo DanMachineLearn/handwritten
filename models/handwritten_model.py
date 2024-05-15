@@ -37,9 +37,7 @@ class HandWrittenModel(nn.Module):
         for i in range(1, len(HIDDEN_SIZE)):
             self.layers.append(nn.Linear(HIDDEN_SIZE[i - 1], HIDDEN_SIZE[i]))
             self.layers.append(nn.ReLU())
-            # self.layers.append(nn.Sigmoid())
-            # self.layers.append(nn.LeakyReLU(negative_slope=0.01))
-            # self.layers.append(nn.Dropout(0.5))  # Dropout 用于正则化
+            self.layers.append(nn.Dropout(0.5))  # Dropout 用于正则化
         # 输出层
         self.layers.append(nn.Linear(HIDDEN_SIZE[-1], output_classes))  # 7000 个输出类
 

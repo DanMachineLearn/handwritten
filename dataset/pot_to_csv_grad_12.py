@@ -16,7 +16,7 @@ from alive_progress import alive_bar
 
 from img_to_64_64_transform import ImgTo64Transform
 from img_to_grad_12_transform import ImgToGrad12Transform
-from to_tensor_transform import ToTensor
+from algorithm.to_tensor_transform import ToTensor
 
 import pandas as pd
 

@@ -6,6 +6,7 @@
 @Description:	使用神经网络，训练grad-12数据
 '''
 
+from sklearn.metrics import accuracy_score
 from dataset.handwritten_dataset_csv_grad_12 import HandWrittenDatasetCsvGrad12
 from models.handwritten_model import HandWrittenModel
 import torch
@@ -96,8 +97,12 @@ def main():
         data_csv_path=f"{DATA_SET_FOLDER}/{DATA_CSV_FILE}", 
         label_csv_path=f"{DATA_SET_FOLDER}/{LABEL_CSV_FOILE}",
         max_length=TEST_SIZE,
+        start_index=TEST_SIZE,
         x_transforms=x_transforms,
         y_transforms=y_transforms)
+    
+    print("len(train_dataset) = ", len(train_dataset))
+    print("len(test_dataset) = ", len(test_dataset))
 
     shuffle = not isinstance(train_dataset, IterableDataset) 
     train_loader = DataLoader(train_dataset, batch_size=BATCH_SIZE, shuffle=shuffle)
@@ -169,11 +174,18 @@ def main():
             for test_X, test_y in iter(test_loader):
                 test_X, test_y = test_X.to(device), test_y.to(device)
                 test_output : torch.Tensor = model(test_X)
+                # test_output : torch.Tensor = model.predict_proba(test_X)
+                # pred_y = test_output[:, 1]
                 val_loss = criterion(test_output, test_y)
                 test_loss += val_loss.item()
 
-                max_args = test_output.argmax(dim = 1)
-                correct += (test_output.argmax(1) == test_y).type(torch.float).sum().item()
+                max_args = np.argmax(test_output, 1)
+                max_args = np.around(max_args)
+                correct += accuracy_score(test_y, max_args)
+                # max_args = test_output.argmax(dim = 1)
+                # correct += accuracy_score(test_y, test_output)
+                # correct += (test_output.argmax(1).type(torch.long) == test_y).type(torch.float).sum().item()
+
         test_loss /= len(train_loader)
         correct /= len(train_loader.dataset)
         train_loss /= len(train_loader)

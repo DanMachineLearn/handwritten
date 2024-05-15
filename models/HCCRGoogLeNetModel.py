@@ -46,7 +46,7 @@ class GaborLayer(nn.Module):
 class GaborGoogLeNet(nn.Module):
     def __init__(self, num_classes=1000):
         super(GaborGoogLeNet, self).__init__()
-        self.gabor_layer = GaborLayer(in_channels=3, out_channels=16, kernel_size=5)
+        self.gabor_layer = GaborLayer(in_channels=1, out_channels=8, kernel_size=5)
 
 
         ### 参数解释
@@ -81,7 +81,7 @@ class GaborGoogLeNet(nn.Module):
         # self.googlenet.fc = nn.Linear(1024, num_classes)
 
     def forward(self, x):
-        # x = self.gabor_layer(x)
+        x = self.gabor_layer(x)
         x = self.googlenet(x)
         return x
 
