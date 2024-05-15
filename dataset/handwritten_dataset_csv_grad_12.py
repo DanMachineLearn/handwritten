@@ -63,7 +63,7 @@ class HandWrittenDatasetCsvGrad12(IterableDataset):
     def __init__(self, 
                  data_csv_path : str, 
                  label_csv_path : str, 
-                 batch_read_size = 10240, 
+                 batch_read_size = None, 
                  max_length = None,
                  start_index = 0,
                  x_transforms : list = None,
@@ -74,7 +74,7 @@ class HandWrittenDatasetCsvGrad12(IterableDataset):
         ----------
         csv_path : str, csv文件位置
         
-        batch_read_size = 10240 每次读取的条数
+        batch_read_size = None 每次读取的条数
 
         test_size = 500 测试集的数量
 
@@ -111,7 +111,7 @@ class HandWrittenDatasetCsvGrad12(IterableDataset):
         self.__y_transforms = y_transforms
 
         ## 读取所有标签
-        labels_data_frame = pd.read_csv(label_csv_path, nrows=batch_read_size, skiprows=0)
+        labels_data_frame = pd.read_csv(label_csv_path)
         self.__labels = labels_data_frame['labels']
         pass
 
@@ -154,7 +154,8 @@ class HandWrittenDatasetCsvGrad12(IterableDataset):
             if self.__read_index >= self.__char_count + self.__start_index:
                 raise StopIteration()
         index = self.__read_index - self.__start_index
-        index = index % self.__batch_read_size
+        if self.__batch_read_size is not None:
+            index = index % self.__batch_read_size
         X : str = self.__X[index]
         X = X.strip('[')
         X = X.strip(']')
