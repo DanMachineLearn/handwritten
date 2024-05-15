@@ -9,7 +9,7 @@
 
 import os
 from alive_progress import alive_bar
-import my_wget
+import utils.my_wget as my_wget
 
 
 class PotDownloader :
