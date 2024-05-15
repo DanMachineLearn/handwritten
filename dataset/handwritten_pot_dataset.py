@@ -103,12 +103,15 @@ class HandWrittenDataSet(IterableDataset):
         self.__char_count = 0
         self.__labels = []
         self.__file_count = 0
-        for pot_folder in pot_folders:
-            p = Pot(pot_folder=pot_folder, chineses_only=True)
-            self.__char_count += p.char_count
-            self.__pots.append(p)
-            self.__labels.extend(p.labels)
-            self.__file_count += p.file_count;
+        print("正在获取字符总数")
+        with alive_bar(self.__char_count) as bar:
+            for pot_folder in pot_folders:
+                p = Pot(pot_folder=pot_folder, chineses_only=True)
+                self.__char_count += p.char_count
+                self.__pots.append(p)
+                self.__labels.extend(p.labels)
+                self.__file_count += p.file_count;
+                bar()
         if outter_labels:
             self.__labels = outter_labels
         else:
@@ -136,9 +139,12 @@ class HandWrittenDataSet(IterableDataset):
         if load_all_on_init:
             self.__X = []
             self.__y = []
-            for X, y in self:
-                self.__X.append(X)
-                self.__y.append(y)
+            print("正在加载Pot文件")
+            with alive_bar(self.__char_count) as bar:
+                for X, y in self:
+                    self.__X.append(X)
+                    self.__y.append(y)
+                    bar()
         else:
             self.__X = None
             self.__y = None
@@ -216,11 +222,9 @@ def main():
         x_transforms=[ImgTo64Transform()],
         y_transforms=[ToTensor(tensor_type=torch.long)])
     
-    for X, y in dataset:
-        # cv.imshow("X", X)
-        # if cv.waitKey(-1) == ord('q'):
-        #     break;
-        pass
+    with alive_bar(len(dataset)) as bar:
+        for X, y in dataset:
+            bar()
 
     len(dataset)
     print("字符总数: ", len(dataset))

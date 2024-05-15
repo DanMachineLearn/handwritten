@@ -10,6 +10,9 @@
 from alive_progress import alive_bar
 import time
 
+correct = 0.1
+print(f"测试集: \n 准确率: {100 * correct:>01f}%")
+
 # retrieve your set of items
 
 items = range(100)
