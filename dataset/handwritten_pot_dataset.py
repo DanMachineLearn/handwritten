@@ -227,10 +227,10 @@ class HandWrittenDataSet(Dataset):
 
 def main():
     pot_folder = []
-    pot_folder.append("work/PotSimple")
+    # pot_folder.append("work/PotSimple")
     # pot_folder.append("work/PotSimpleTest")
     # pot_folder.append("work/PotTest")
-    # pot_folder.append("work/PotTrain")
+    pot_folder.append("work/PotTrain")
     # pot_folder.append("work/data/HWDB_pot/PotTest")
     # pot_folder.append("work/data/HWDB_pot/PotTrain")
 
