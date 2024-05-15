@@ -223,7 +223,9 @@ def main():
         y_transforms=[ToTensor(tensor_type=torch.long)])
     
     with alive_bar(len(dataset)) as bar:
-        for X, y in dataset:
+        for i in range(len(dataset)):
+            X, y = dataset[i]
+        # for X, y in dataset:
             bar()
 
     len(dataset)
