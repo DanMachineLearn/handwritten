@@ -56,6 +56,8 @@ def main():
     train_folder = os.environ["TRAIN_FOLDER"] if os.environ.__contains__("TRAIN_FOLDER") else "PotSimple"
     # 测试数据集的文件夹
     test_folder = os.environ["TEST_FOLDER"] if os.environ.__contains__("TEST_FOLDER") else "PotSimpleTest"
+    # 一次性加载所有数据到内存中
+    LOAD_ALL_ON_INIT = bool(os.environ["LOAD_ALL_ON_INIT"] if os.environ.__contains__("LOAD_ALL_ON_INIT") else True)
 
     ## 优先使用cuda
     device = (
@@ -90,12 +92,14 @@ def main():
 
     train_dataset = HandWrittenDataSet(
         pot_folders=train_pot_folder, 
+        load_all_on_init=LOAD_ALL_ON_INIT,
         x_transforms=x_transforms,
         y_transforms=y_transforms)
     
     test_dataset = HandWrittenDataSet(
         pot_folders=test_pot_folder, 
         outter_labels=train_dataset.labels,
+        load_all_on_init=LOAD_ALL_ON_INIT,
         x_transforms=x_transforms,
         y_transforms=y_transforms)
 
