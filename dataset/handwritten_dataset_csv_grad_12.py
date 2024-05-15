@@ -113,6 +113,8 @@ class HandWrittenDatasetCsvGrad12(IterableDataset):
         ## 读取所有标签
         labels_data_frame = pd.read_csv(label_csv_path)
         self.__labels = labels_data_frame['labels']
+
+        self.read_next()
         pass
 
 
@@ -145,8 +147,8 @@ class HandWrittenDatasetCsvGrad12(IterableDataset):
         '''
         获取下一个数据
         '''
-        if self.__read_index >= self.__read_length:
-            self.read_next()
+        # if self.__read_index >= self.__read_length:
+        #     self.read_next()
         if self.__max_length is not None:
             if self.__read_index >= self.__max_length + self.__start_index:
                 raise StopIteration()
@@ -177,7 +179,7 @@ class HandWrittenDatasetCsvGrad12(IterableDataset):
 
     def __iter__(self) :
         self.__read_index = self.__start_index
-        self.__read_length = self.__start_index
+        # self.__read_length = self.__start_index
         return self
 
     def __len__(self):
