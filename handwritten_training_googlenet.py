@@ -104,7 +104,7 @@ def main():
         y_transforms=y_transforms)
 
     shuffle = not isinstance(train_dataset, IterableDataset) 
-    train_loader = DataLoader(train_dataset, batch_size=batch_size, shuffle=shuffle)
+    train_loader = DataLoader(train_dataset, batch_size=batch_size, shuffle=LOAD_ALL_ON_INIT)
     test_loader = DataLoader(test_dataset, batch_size=batch_size, shuffle=False)
     # print("打开文件数量: ", train_dataset.file_count + test_dataset.file_count)
     print("打开文件数量: ", train_dataset.file_count + test_dataset.file_count)

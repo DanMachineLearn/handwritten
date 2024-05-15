@@ -81,7 +81,7 @@ class GaborGoogLeNet(nn.Module):
         # self.googlenet.fc = nn.Linear(1024, num_classes)
 
     def forward(self, x):
-        x = self.gabor_layer(x)
+        # x = self.gabor_layer(x)
         x = self.googlenet(x)
         return x
 

@@ -30,7 +30,7 @@ import utils.my_wget as my_wget
 
 
 
-class HandWrittenDataSet(IterableDataset):
+class HandWrittenDataSet(Dataset):
     '''
     中科院pot文件读取的iterator类
     '''

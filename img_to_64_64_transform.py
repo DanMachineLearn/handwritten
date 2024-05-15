@@ -72,6 +72,9 @@ class ImgTo64Transform:
             resized_image = cv.cvtColor(resized_image, cv.COLOR_GRAY2RGB)
             resized_image = resized_image.reshape((3, 64, 64))
 
+        if self.__channel_count == 1:
+            resized_image = resized_image.reshape((1, 64, 64))
+
         return resized_image
 
 
