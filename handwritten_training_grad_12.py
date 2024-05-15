@@ -7,21 +7,17 @@
 '''
 
 from dataset.handwritten_dataset_csv_grad_12 import HandWrittenDatasetCsvGrad12
-from handwritten_model import HandWrittenModel
+from models.handwritten_model import HandWrittenModel
 import torch
 import torch.optim as optim
 import torch.nn as nn
 import numpy as np
 from torch.utils.data import DataLoader
 from alive_progress import alive_bar
-from handwritten_grad_12_csv_dataset import HandWrittenGrad12CsvDataSet
-from handwritten_model_cnn import HandWrittenCnnModel
-from dataset.handwritten_pot_dataset import HandWrittenDataSet
 from img_to_64_64_transform import ImgTo64Transform
 from img_to_grad_12_transform import ImgToGrad12Transform
 from utils.pot_downloader import PotDownloader
-from to_one_hot_transform import ToOneHot
-from to_tensor_transform import ToTensor
+from algorithm.to_tensor_transform import ToTensor
 from torch.utils.data import IterableDataset
 
 import os

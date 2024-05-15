@@ -9,15 +9,24 @@ pip install alive_progress
 
 ## 使用卷积训练模型
 ``` cmd
-pip install alive_progress
-export DATA_SET_FOLDER=/gemini/data-1
-export MODEL_FOLDER=/gemini/pretrain
+export DATA_SET_FOLDER=work
+export MODEL_FOLDER=pretrain
+export TRAIN_FOLDER=PotTrain
+export TEST_FOLDER=PotTest
+python handwritten_training_googlenet.py
+```
+效果并不理想
+
+## 使用GoogLeNet训练模型
+
+``` cmd
+export DATA_SET_FOLDER=work
+export MODEL_FOLDER=pretrain
 export TRAIN_FOLDER=PotTrain
 export TEST_FOLDER=PotTest
 cd /gemini/code/handwritten
 python handwritten_training_cnn.py
 ```
-
 
 ## 使用Grad-12算法训练模型
 
