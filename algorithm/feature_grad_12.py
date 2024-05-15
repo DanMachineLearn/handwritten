@@ -51,7 +51,9 @@ def get_features(image : np.ndarray, show_plt : bool = False):
         for xx in xxx_list:
             x_list = np.hsplit(xx, width_count)
             for x in x_list:
-                block_8_8 = np.sum(x)
+                # block_8_8 = np.sum(x)
+                # 改为亚采样，即获取 该区域的平均值
+                block_8_8 = np.mean(x)
                 features.append(block_8_8)
         
 

@@ -29,7 +29,7 @@ export TRAIN_FOLDER=PotTrain
 export TEST_FOLDER=PotTest
 export BATCH_SIZE=1024
 export NUM_EPOCHS=200
-export MIN_LN=0.0000001
+export MIN_LN=0.0001
 python dataset/pot_to_csv_grad_12.py
 ```
 
@@ -42,6 +42,6 @@ export TRAIN_FOLDER=PotTrain
 export TEST_FOLDER=PotTest
 export BATCH_SIZE=1024
 export NUM_EPOCHS=200
-export MIN_LN=0.0000001
+export MIN_LN=0.0001
 python handwritten_training_grad_12.py
 ```

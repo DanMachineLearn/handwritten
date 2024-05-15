@@ -263,3 +263,16 @@ class Pot(object):
             return self.next()
         
         return img, tagcode
+
+
+def main():
+    pot_folder = "work/PotSimple"
+    p = Pot(pot_folder=pot_folder)
+    for img, tagcode in p.get_data_iter():
+        cv.imshow("img", img)
+        cv.waitKey(-1)
+    pass
+
+if __name__ == '__main__':
+
+    main()
