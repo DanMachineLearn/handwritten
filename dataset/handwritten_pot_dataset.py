@@ -104,7 +104,7 @@ class HandWrittenDataSet(IterableDataset):
         self.__labels = []
         self.__file_count = 0
         print("正在获取字符总数")
-        with alive_bar(self.__char_count) as bar:
+        with alive_bar(len(pot_folders)) as bar:
             for pot_folder in pot_folders:
                 p = Pot(pot_folder=pot_folder, chineses_only=True)
                 self.__char_count += p.char_count
