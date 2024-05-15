@@ -97,7 +97,7 @@ def main():
         data_csv_path=f"{DATA_SET_FOLDER}/{DATA_CSV_FILE}", 
         label_csv_path=f"{DATA_SET_FOLDER}/{LABEL_CSV_FOILE}",
         max_length=TEST_SIZE,
-        start_index=TEST_SIZE,
+        # start_index=TEST_SIZE,
         x_transforms=x_transforms,
         y_transforms=y_transforms)
     
