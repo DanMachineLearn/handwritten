@@ -18,7 +18,7 @@ import numpy as np
 
 
 # 隐藏层大小
-HIDDEN_SIZE = [2048]
+HIDDEN_SIZE = [1024]
 
 
 # 定义神经网络模型

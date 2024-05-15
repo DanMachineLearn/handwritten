@@ -5,6 +5,9 @@
 @Author		:	dan
 @Description:	直接读取pot文件，转成方向线素
 '''
+if __name__ == '__main__':
+    import sys
+    sys.path.append('.')
 from io import BufferedReader
 from alive_progress import alive_bar
 import torch
@@ -67,6 +70,7 @@ class HandWrittenDataSet(IterableDataset):
                  need_label=False,
                  outter_labels:list[str] = None, 
                  cache_csv_file : str = None,
+                 load_all_on_init = False, 
                  x_transforms : list = None,
                  y_transforms : list = None) -> None:
         ''' 
@@ -81,6 +85,8 @@ class HandWrittenDataSet(IterableDataset):
         cache_csv_file 第二次开始训练的时候，直接获取缓存中的数据训练
 
         need_label=True, 是否在输出的y里面添加label
+
+        load_all_on_init = False 是否一次将所有pot数据读取到内存，方便训练
         '''
 
         self.__need_label = need_label
@@ -124,6 +130,19 @@ class HandWrittenDataSet(IterableDataset):
             if isinstance(y_trans, ToOneHot):
                 y_trans.create_encoder(list(range(0, len(self.labels))))
 
+
+        ## 一次读取所有的pot文件到内存，加快训练速度
+        self.__load_all_on_init = load_all_on_init
+        if load_all_on_init:
+            self.__X = []
+            self.__y = []
+            for X, y in self:
+                self.__X.append(X)
+                self.__y.append(y)
+        else:
+            self.__X = None
+            self.__y = None
+
     def __iter__(self):
         self.__current_pot_index = 0
         for p in self.__pots:
@@ -134,15 +153,16 @@ class HandWrittenDataSet(IterableDataset):
         '''
         返回字符sample总数
         '''
+        if self.__load_all_on_init:
+            return len(self.__X)
         return self.__char_count
     
 
     def __getitem__(self, index):
         ''' 
-        这个方法需要加载所有字符到内存中，暂时不支持        
+        这个方法需要加载所有字符到内存中  
         '''
-        
-        pass
+        return self.__X[index], self.__y[index]
 
 
     def __next__(self):
@@ -181,7 +201,10 @@ class HandWrittenDataSet(IterableDataset):
 
 def main():
     pot_folder = []
-    pot_folder.append("work/data/HWDB_pot/potSimple")
+    pot_folder.append("work/PotSimple")
+    pot_folder.append("work/PotSimpleTest")
+    pot_folder.append("work/PotTest")
+    pot_folder.append("work/PotTrain")
     # pot_folder.append("work/data/HWDB_pot/PotTest")
     # pot_folder.append("work/data/HWDB_pot/PotTrain")
 
@@ -189,13 +212,15 @@ def main():
     start_time = time.time()
     dataset = HandWrittenDataSet(
         pot_folders=pot_folder, 
+        load_all_on_init=True,
         x_transforms=[ImgTo64Transform()],
         y_transforms=[ToTensor(tensor_type=torch.long)])
     
     for X, y in dataset:
-        cv.imshow("X", X)
-        if cv.waitKey(-1) == ord('q'):
-            break;
+        # cv.imshow("X", X)
+        # if cv.waitKey(-1) == ord('q'):
+        #     break;
+        pass
 
     len(dataset)
     print("字符总数: ", len(dataset))
