@@ -12,6 +12,8 @@ import torch.nn as nn
 import numpy as np
 from torch.utils.data import DataLoader
 from alive_progress import alive_bar
+from algorithm.channel1_to_channel3 import Channel1ToChannel3
+from dataset.handwritten_img_bin_dataset import HandWrittenBinDataSet
 from models.HCCRGoogLeNetModel import GaborGoogLeNet
 from dataset.handwritten_pot_dataset import HandWrittenDataSet
 from img_to_64_64_transform import ImgTo64Transform
@@ -87,24 +89,17 @@ def main():
     start_time = time.time()
     ## 加载数据集
 
-    x_transforms = [ImgTo64Transform(channel_count=3), ToTensor(tensor_type=torch.float32)]
+    x_transforms = [Channel1ToChannel3(), ToTensor(tensor_type=torch.float32)]
     y_transforms = [ToTensor(tensor_type=torch.long)]
 
-    train_dataset = HandWrittenDataSet(
-        pot_folders=train_pot_folder, 
-        load_all_on_init=LOAD_ALL_ON_INIT,
-        x_transforms=x_transforms,
-        y_transforms=y_transforms)
+    train_dataset = HandWrittenBinDataSet(train=True, bin_folder=f"{DATA_SET_FOLDER}/Bin",
+                                          x_transforms=x_transforms, y_transforms=y_transforms)
     
-    test_dataset = HandWrittenDataSet(
-        pot_folders=test_pot_folder, 
-        outter_labels=train_dataset.labels,
-        load_all_on_init=LOAD_ALL_ON_INIT,
-        x_transforms=x_transforms,
-        y_transforms=y_transforms)
+    test_dataset = HandWrittenBinDataSet(train=False, bin_folder=f"{DATA_SET_FOLDER}/Bin",
+                                          x_transforms=x_transforms, y_transforms=y_transforms)
 
     shuffle = not isinstance(train_dataset, IterableDataset) 
-    train_loader = DataLoader(train_dataset, batch_size=batch_size, shuffle=LOAD_ALL_ON_INIT)
+    train_loader = DataLoader(train_dataset, batch_size=batch_size, shuffle=shuffle)
     test_loader = DataLoader(test_dataset, batch_size=batch_size, shuffle=False)
     # print("打开文件数量: ", train_dataset.file_count + test_dataset.file_count)
     print("打开文件数量: ", train_dataset.file_count + test_dataset.file_count)
@@ -196,9 +191,10 @@ def main():
     all_classes = train_dataset.labels
     
     test_x = "handwritten_chinese.jpg"
-    for x_tran in x_transforms:
+    x_trainsforms = [ImgTo64Transform(need_dilate=True, channel_count=3), ToTensor(tensor_type=torch.float32)]
+    for x_tran in x_trainsforms:
         test_x = x_tran(test_x)
-    test_x = test_x.reshape((1, test_x.shape[0], test_x.shape[1], test_x.shape[2]))
+    # test_x = test_x.reshape((1, test_x.shape[0], test_x.shape[1], test_x.shape[2]))
 
     ## 预测结果
     model.eval()

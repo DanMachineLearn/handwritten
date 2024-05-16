@@ -30,7 +30,7 @@ import utils.my_wget as my_wget
 
 
 
-class HandWrittenDataSet(Dataset):
+class HandWrittenDataSet(IterableDataset):
     '''
     中科院pot文件读取的iterator类
     '''
@@ -75,8 +75,6 @@ class HandWrittenDataSet(Dataset):
                  frame_count=8, 
                  need_label=False,
                  outter_labels:list[str] = None, 
-                 load_all_on_init = False, 
-                 load_from_bin = True,
                  x_transforms : list = None,
                  y_transforms : list = None) -> None:
         ''' 
@@ -92,15 +90,12 @@ class HandWrittenDataSet(Dataset):
 
         need_label=True, 是否在输出的y里面添加label
 
-        load_all_on_init = False 是否一次将所有pot数据读取到内存，方便训练
-
         load_from_bin = True 是否加载work目录下的二进制持久化文件
         '''
 
         self.__need_label = need_label
         self.pot_folders = pot_folders
         self.__current_pot_index = 0
-        self.__load_all_on_init = load_all_on_init
 
         
         ## 统计所有的图像数据、字符数量、所有字符标签
@@ -113,10 +108,7 @@ class HandWrittenDataSet(Dataset):
             self.__x_transforms = x_transforms
         else:
             self.__x_transforms = [ImgTo4DirectionTransform(frame_count)]
-        if y_transforms:
-            self.__y_transforms = y_transforms
-        else:
-            self.__y_transforms = [ToTensor]
+        self.__y_transforms = y_transforms
 
         # x 的特征数量，取决于最后一个转换器
         self.__input_shape = self.__x_transforms[-1].input_shape
@@ -125,19 +117,6 @@ class HandWrittenDataSet(Dataset):
         for y_trans in self.__y_transforms:
             if isinstance(y_trans, ToOneHot):
                 y_trans.create_encoder(list(range(0, len(self.labels))))
-
-        ## 直接加载bin文件
-        if load_all_on_init:
-            if load_from_bin \
-                and os.path.isfile('work/labels.bin') \
-                and os.path.isfile('work/X.bin') \
-                and os.path.isfile('work/y.bin'):
-                self.__X = torch.load('work/X.bin')
-                self.__y = torch.load('work/y.bin')
-                self.__labels = torch.load('work/labels.bin')
-                self.__char_count = len(self.__X)
-                self.__file_count = 3
-                return 
 
         print("正在获取字符总数")
         with alive_bar(len(pot_folders)) as bar:
@@ -153,21 +132,8 @@ class HandWrittenDataSet(Dataset):
         else:
             self.__labels = sorted(set(self.__labels))
         
-
-
-        ## 一次读取所有的pot文件到内存，加快训练速度
-        if load_all_on_init:
-            self.__X = []
-            self.__y = []
-            print("正在加载Pot文件")
-            with alive_bar(self.__char_count) as bar:
-                for X, y in self:
-                    self.__X.append(X)
-                    self.__y.append(y)
-                    bar()
-        else:
-            self.__X = None
-            self.__y = None
+        self.__X = None
+        self.__y = None
 
     def __iter__(self):
         self.__current_pot_index = 0
@@ -179,16 +145,7 @@ class HandWrittenDataSet(Dataset):
         '''
         返回字符sample总数
         '''
-        if self.__load_all_on_init:
-            return len(self.__X)
         return self.__char_count
-    
-
-    def __getitem__(self, index):
-        ''' 
-        这个方法需要加载所有字符到内存中  
-        '''
-        return self.__X[index], self.__y[index]
 
 
     def __next__(self):
@@ -225,39 +182,62 @@ class HandWrittenDataSet(Dataset):
             return self.__next__()
         return X, y
 
-def main():
-    pot_folder = []
-    # pot_folder.append("work/PotSimple")
-    # pot_folder.append("work/PotSimpleTest")
-    # pot_folder.append("work/PotTest")
-    pot_folder.append("work/PotTrain")
-    # pot_folder.append("work/data/HWDB_pot/PotTest")
-    # pot_folder.append("work/data/HWDB_pot/PotTrain")
 
+def export(train = True, out_labels : list[str] = None):
+    ''' 
+    导出pot成bin文件
+    '''
+    train_folder = os.environ["TRAIN_FOLDER"] if os.environ.__contains__("TRAIN_FOLDER") else "PotSimple"
+    # 测试数据集的文件夹
+    test_folder = os.environ["TEST_FOLDER"] if os.environ.__contains__("TEST_FOLDER") else "PotSimpleTest"
+    pot_folder = []
+    if train:
+        pot_folder.append(f"work/{train_folder}")
+    else:
+        pot_folder.append(f"work/{test_folder}")
 
     import time
     start_time = time.time()
+    x_transforms = [ImgTo64Transform(channel_count=1)]
+    y_transforms = []
     dataset = HandWrittenDataSet(
         pot_folders=pot_folder, 
-        load_all_on_init=True,
-        x_transforms=[ImgTo64Transform()],
-        y_transforms=[ToTensor(tensor_type=torch.long)])
+        outter_labels=out_labels,
+        x_transforms=x_transforms,
+        y_transforms=y_transforms)
     
+    i = 0
+    XX = []
+    yy = []
+    file_index = 1
+    torch.save(dataset.labels, f'work/Bin/labels.bin')
     with alive_bar(len(dataset)) as bar:
-        for i in range(len(dataset)):
-            X, y = dataset[i]
+        for X, y in dataset:
+            XX.append(X)
+            yy.append(y)
+            i += 1
+            if i % 10000 == 0:
+                torch.save(XX, f'work/Bin/{file_index}_{"train" if train else "test"}.x.bin')
+                torch.save(yy, f'work/Bin/{file_index}_{"train" if train else "test"}.y.bin')
+                XX = []
+                yy = []
+                file_index += 1
             bar()
+    torch.save(XX, f'work/Bin/{file_index}_{"train" if train else "test"}.x.bin')
+    torch.save(yy, f'work/Bin/{file_index}_{"train" if train else "test"}.y.bin')
+    XX = []
+    yy = []
 
-
-    # 将读取的结果，持久化到硬盘，方便下次读取
-    torch.save(dataset.X, "work/X.bin")
-    torch.save(dataset.y, "work/y.bin")
-    torch.save(dataset.labels, "work/labels.bin")
 
     len(dataset)
     print("字符总数: ", len(dataset))
     print("打开pot文件数量: ", dataset.file_count)
     print("打开所有pot文件总耗时: ", '{:.2f} s'.format(time.time() - start_time))
+    return dataset
+
+def main():
+    dataset = export(train=True)
+    export(train=False, out_labels=dataset.labels)
     pass
 
 if __name__ == '__main__':
