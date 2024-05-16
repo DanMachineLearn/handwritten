@@ -192,7 +192,8 @@ class HandWrittenBinDataSet(IterableDataset):
         if self.__index >= len(self.__X):
             self.next_bin()
 
-        X, y = self.__X[self.__index], self.__y[self.__index]
+        X = self.__X[self.__index]
+        y = self.__y[self.__index]
         try:
             if self.__x_transforms:
                 for x_transform in self.__x_transforms:
