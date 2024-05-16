@@ -79,8 +79,7 @@ class GaborGoogLeNet(nn.Module):
         # 说明：分类器的输出类别数量。如果你的数据集类别数量不同于 1000（ImageNet 的类别数量），你需要根据你的数据集设置 num_classes。这个参数在进行迁移学习或微调时特别重要。
         self.googlenet = models.googlenet(pretrained=False, 
                                           init_weights=True, 
-                                          num_classes=num_classes, 
-                                          init_weights=True)
+                                          num_classes=num_classes)
         # self.googlenet.fc = nn.Linear(1024, num_classes)
 
     def forward(self, x):
