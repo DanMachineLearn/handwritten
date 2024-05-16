@@ -10,7 +10,7 @@ import numpy as np
 import cv2
 import matplotlib.pyplot as plt  # 用于绘图
 
-def get_features(image : np.ndarray, show_plt : bool = False):
+def get_features(image : np.ndarray, show_plt : bool = False, image_only = False, direction_count = 12):
     ''' 
     
     Parameters
@@ -24,7 +24,7 @@ def get_features(image : np.ndarray, show_plt : bool = False):
     '''
     # Sobel参数
     sobel_size = 3  # 滤波器大小
-    angles = np.linspace(0, 2 * np.pi, 13)[:-1]  # 生成12个方向的角度，不包含2*pi
+    angles = np.linspace(0, 2 * np.pi, direction_count + 1)[:-1]  # 生成12个方向的角度，不包含2*pi
 
     angle_0 = 2 * np.pi / 12
 
@@ -47,6 +47,8 @@ def get_features(image : np.ndarray, show_plt : bool = False):
         n += 1
 
         feature_images.append(gn)  # 将特征图添加到列表中
+        if image_only:
+            continue;
         xxx_list = np.vsplit(gn, height_count)
         for xx in xxx_list:
             x_list = np.hsplit(xx, width_count)
@@ -68,6 +70,9 @@ def get_features(image : np.ndarray, show_plt : bool = False):
 
         plt.tight_layout()  # 调整子图间距
         plt.show()  # 显示图
+
+    if image_only:
+        return feature_images;
 
     return np.array(features).flatten()
 

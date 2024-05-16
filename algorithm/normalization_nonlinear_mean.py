@@ -63,6 +63,7 @@ def remap(image : np.ndarray, target_size : tuple[2] | list[2] = (64, 64), show_
     for row in black_indices_rows:
         c_point_h = np.diff(row, axis=0)
         c_point_h = c_point_h - 1
+        print(len(c_point_h))
 
 
     # 计算 h 和 v

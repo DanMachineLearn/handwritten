@@ -44,9 +44,9 @@ class GaborLayer(nn.Module):
 
 # 定义 Gabor-GoogLeNet 模型
 class GaborGoogLeNet(nn.Module):
-    def __init__(self, num_classes=1000):
+    def __init__(self, num_classes=1000, in_channels = 1):
         super(GaborGoogLeNet, self).__init__()
-        self.gabor_layer = GaborLayer(in_channels=1, out_channels=8, kernel_size=5)
+        # self.gabor_layer = GaborLayer(in_channels=in_channels, out_channels=8, kernel_size=5)
 
 
         ### 参数解释
@@ -77,15 +77,101 @@ class GaborGoogLeNet(nn.Module):
         # num_classes (int)：
         # 默认值：1000
         # 说明：分类器的输出类别数量。如果你的数据集类别数量不同于 1000（ImageNet 的类别数量），你需要根据你的数据集设置 num_classes。这个参数在进行迁移学习或微调时特别重要。
-        self.googlenet = models.googlenet(pretrained=False, 
-                                          init_weights=True, 
-                                          num_classes=num_classes)
+        # self.googlenet = models.googlenet(pretrained=False, 
+        #                                   init_weights=True, 
+        #                                   num_classes=num_classes)
+        self.googlenet = GoogLeNet(in_channels=in_channels, num_classes=num_classes)
         # self.googlenet.fc = nn.Linear(1024, num_classes)
 
     def forward(self, x):
         # x = self.gabor_layer(x)
         x = self.googlenet(x)
         return x
+
+
+
+def BasicConv2d(in_channels, out_channels, kernel_size):
+    return nn.Sequential(
+        nn.Conv2d(in_channels, out_channels, kernel_size, stride=1, padding=kernel_size // 2),
+        nn.BatchNorm2d(out_channels),
+        nn.ReLU(True)
+    )
+
+
+class InceptionV1Module(nn.Module):
+    def __init__(self, in_channels, out_channels1, out_channels2reduce, out_channels2, out_channels3reduce,
+                 out_channels3, out_channels4):
+        super(InceptionV1Module, self).__init__()
+        # 线路1，单个1×1卷积层
+        self.branch1_conv = BasicConv2d(in_channels, out_channels1, kernel_size=1)
+        # 线路2，1×1卷积层后接3×3卷积层
+        self.branch2_conv1 = BasicConv2d(in_channels, out_channels2reduce, kernel_size=1)
+        self.branch2_conv2 = BasicConv2d(out_channels2reduce, out_channels2, kernel_size=3)
+        # 线路3，1×1卷积层后接5×5卷积层
+        self.branch3_conv1 = BasicConv2d(in_channels, out_channels3reduce, kernel_size=1)
+        self.branch3_conv2 = BasicConv2d(out_channels3reduce, out_channels3, kernel_size=5)
+        # 线路4，3×3最大池化层后接1×1卷积层
+        self.branch4_pool = nn.MaxPool2d(kernel_size=3, stride=1, padding=1)
+        self.branch4_conv = BasicConv2d(in_channels, out_channels4, kernel_size=1)
+
+    def forward(self, x):
+        out1 = self.branch1_conv(x)
+        out2 = self.branch2_conv2(self.branch2_conv1(x))
+        out3 = self.branch3_conv2(self.branch3_conv1(x))
+        out4 = self.branch4_conv(self.branch4_pool(x))
+        out = torch.cat([out1, out2, out3, out4], dim=1)
+        return out
+
+class GoogLeNet(nn.Module):
+    def __init__(self, num_classes, in_channels = 1):
+        super().__init__()
+        self.conv1 = nn.Sequential(
+            # nn.Conv2d(3, 64, kernel_size=7, stride=2, padding=3),
+            nn.Conv2d(in_channels, 64, kernel_size=7, stride=2, padding=3),
+            nn.BatchNorm2d(64),
+            nn.ReLU(True),
+            nn.MaxPool2d(kernel_size=3, stride=2, padding=1)
+        )
+        self.conv2 = nn.Sequential(
+            nn.Conv2d(64, 64, kernel_size=1),
+            nn.Conv2d(64, 192, kernel_size=3, padding=1),
+            nn.BatchNorm2d(192),
+            nn.ReLU(True),
+            nn.MaxPool2d(kernel_size=3, stride=2, padding=1)
+        )
+        self.inception3 = nn.Sequential(
+            InceptionV1Module(192, 64, 96, 128, 16, 32, 32),
+            InceptionV1Module(256, 128, 128, 192, 32, 96, 64),
+            nn.MaxPool2d(kernel_size=3, stride=2, padding=1)
+        )
+        self.inception4 = nn.Sequential(
+            InceptionV1Module(480, 192, 96, 208, 16, 48, 64),
+            InceptionV1Module(512, 160, 112, 224, 24, 64, 64),
+            InceptionV1Module(512, 128, 128, 256, 24, 64, 64),
+            InceptionV1Module(512, 112, 144, 288, 32, 64, 64),
+            InceptionV1Module(528, 256, 160, 320, 32, 128, 128),
+            nn.MaxPool2d(kernel_size=3, stride=2, padding=1)
+        )
+        self.inception5 = nn.Sequential(
+            InceptionV1Module(832, 256, 160, 320, 32, 128, 128),
+            InceptionV1Module(832, 384, 192, 384, 48, 128, 128),
+            nn.AdaptiveAvgPool2d((1, 1)),
+            # nn.AvgPool2d(kernel_size=7, stride=1)
+        )
+        self.fc = nn.Sequential(
+            nn.Dropout(0.4),
+            nn.Linear(1024, num_classes)
+        )
+
+    def forward(self, x):
+        x = self.conv1(x)
+        x = self.conv2(x)
+        x = self.inception3(x)
+        x = self.inception4(x)
+        x = self.inception5(x)
+        x = x.view(x.size(0), -1)
+        out = self.fc(x)
+        return out
 
 
 def main():

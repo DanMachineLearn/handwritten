@@ -5,7 +5,9 @@
 @Author		:	dan
 @Description:	训练手写识别模型（使用卷积神经网络）
 ''' 
-
+if __name__ == '__main__':
+    import sys
+    sys.path.append(".")
 import torch
 import torch.optim as optim
 import torch.nn as nn
@@ -13,6 +15,7 @@ import numpy as np
 from torch.utils.data import DataLoader
 from alive_progress import alive_bar
 from algorithm.channel1_to_channel3 import Channel1ToChannel3
+from algorithm.channel1_to_grad8_1 import Channel1ToGrad8_1
 from dataset.handwritten_img_bin_dataset import HandWrittenBinDataSet
 from models.HCCRGoogLeNetModel import GaborGoogLeNet
 from dataset.handwritten_pot_dataset import HandWrittenDataSet
@@ -47,11 +50,11 @@ def main():
     # 初始的学习率
     init_ln = float(os.environ["INIT_LN"] if os.environ.__contains__("INIT_LN") else 0.001)
     # 最低的学习率
-    min_ln = float(os.environ["MIN_LN"] if os.environ.__contains__("MIN_LN") else 0.0001)
+    min_ln = float(os.environ["MIN_LN"] if os.environ.__contains__("MIN_LN") else 0.00001)
     # 每次训练的批次
     batch_size = int(os.environ["BATCH_SIZE"] if os.environ.__contains__("BATCH_SIZE") else 512)
     # 循环训练的次数
-    num_epochs = int(os.environ["NUM_EPOCHS"] if os.environ.__contains__("NUM_EPOCHS") else 1)
+    num_epochs = int(os.environ["NUM_EPOCHS"] if os.environ.__contains__("NUM_EPOCHS") else 50)
     # 前几次训练不修改学习率
     patience = int(os.environ["PATIENCE"] if os.environ.__contains__("PATIENCE") else 1)
     # 训练数据集的文件夹
@@ -89,7 +92,8 @@ def main():
     start_time = time.time()
     ## 加载数据集
 
-    x_transforms = [Channel1ToChannel3(), ToTensor(tensor_type=torch.float32)]
+    # x_transforms = [Channel1ToChannel3(), ToTensor(tensor_type=torch.float32)]
+    x_transforms = [Channel1ToGrad8_1(), ToTensor(tensor_type=torch.float32)]
     y_transforms = [ToTensor(tensor_type=torch.long)]
 
     train_dataset = HandWrittenBinDataSet(train=True, bin_folder=f"{DATA_SET_FOLDER}/Bin",
@@ -106,7 +110,7 @@ def main():
     print("打开所有文件总耗时: ", '{:.2f} s'.format(time.time() - start_time))
 
     ## 创建模型
-    model = GaborGoogLeNet(num_classes=len(train_dataset.labels))
+    model = GaborGoogLeNet(in_channels=9, num_classes=len(train_dataset.labels))
     model = model.to(device)
 
 
@@ -153,7 +157,7 @@ def main():
             for X, y in iter(train_loader):
                 X, y = X.to(device), y.to(device)
                 test_output : GoogLeNetOutputs = model(X)  # 前向传播
-                test_output = test_output.logits
+                # test_output = test_output.logits
                 loss = criterion(test_output, y) 
                 train_loss += loss.item()
                 loss.backward(retain_graph=False)  # 反向传播，不累计梯度
@@ -191,7 +195,7 @@ def main():
     all_classes = train_dataset.labels
     
     test_x = "handwritten_chinese.jpg"
-    x_trainsforms = [ImgTo64Transform(need_dilate=True, channel_count=3), ToTensor(tensor_type=torch.float32)]
+    x_trainsforms = [ImgTo64Transform(need_dilate=True, channel_count=1), ToTensor(tensor_type=torch.float32)]
     for x_tran in x_trainsforms:
         test_x = x_tran(test_x)
     # test_x = test_x.reshape((1, test_x.shape[0], test_x.shape[1], test_x.shape[2]))
