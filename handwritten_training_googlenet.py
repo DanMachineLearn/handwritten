@@ -152,7 +152,7 @@ def main():
         ## 用于输出训练的总进度
         model.train()  # 设置为训练模式
         train_loss = 0.0
-        train_correct = 0, 0
+        train_correct = 0.0
         # train_size = int(len(train_dataset) / batch_size)
         with alive_bar(len(train_loader)) as bar:
             for X, y in iter(train_loader):
@@ -161,7 +161,10 @@ def main():
                 # test_output = test_output.logits
                 loss = criterion(test_output, y) 
                 train_loss += loss.item()
-                train_correct += (test_output.argmax(1) == y).type(torch.float).sum().item()
+
+                predicted = torch.max(test_output.data,1)[1]
+                c = (predicted == y).type(torch.float).sum().item()
+                train_correct +=  c
                 loss.backward(retain_graph=False)  # 反向传播，不累计梯度
                 optimizer.step()
                 optimizer.zero_grad()  # 清空梯度
