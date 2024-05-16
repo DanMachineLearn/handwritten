@@ -152,6 +152,7 @@ def main():
         ## 用于输出训练的总进度
         model.train()  # 设置为训练模式
         train_loss = 0.0
+        train_correct = 0, 0
         # train_size = int(len(train_dataset) / batch_size)
         with alive_bar(len(train_loader)) as bar:
             for X, y in iter(train_loader):
@@ -160,6 +161,7 @@ def main():
                 # test_output = test_output.logits
                 loss = criterion(test_output, y) 
                 train_loss += loss.item()
+                train_correct += (test_output.argmax(1) == y).type(torch.float).sum().item()
                 loss.backward(retain_graph=False)  # 反向传播，不累计梯度
                 optimizer.step()
                 optimizer.zero_grad()  # 清空梯度
@@ -181,7 +183,7 @@ def main():
         test_loss /= len(train_loader)
         correct /= len(train_loader.dataset)
         train_loss /= len(train_loader)
-        print(f"训练集: \n 平均 Loss: {train_loss:>8f}")
+        print(f"训练集: \n 准确率: {100 * train_correct:>01f}%, 平均 Loss: {train_loss:>8f}")
         print(f"测试集: \n 准确率: {100 * correct:>01f}%, 平均 Loss: {test_loss:>8f}\n")
 
         # 根据验证损失调整学习率
@@ -195,7 +197,7 @@ def main():
     all_classes = train_dataset.labels
     
     test_x = "handwritten_chinese.jpg"
-    x_trainsforms = [ImgTo64Transform(need_dilate=True, channel_count=1), ToTensor(tensor_type=torch.float32)]
+    x_trainsforms = [ImgTo64Transform(need_dilate=True, channel_count=1), Channel1ToGrad8_1(), ToTensor(tensor_type=torch.float32)]
     for x_tran in x_trainsforms:
         test_x = x_tran(test_x)
     # test_x = test_x.reshape((1, test_x.shape[0], test_x.shape[1], test_x.shape[2]))
