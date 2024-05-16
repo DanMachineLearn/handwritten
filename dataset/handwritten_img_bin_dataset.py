@@ -164,9 +164,6 @@ class HandWrittenBinDataSet(IterableDataset):
         self.__X_bin_files = sorted(self.__X_bin_files, key=functools.cmp_to_key(my_compare))
         self.__y_bin_files = sorted(self.__y_bin_files, key=functools.cmp_to_key(my_compare))
 
-        print("已加载")
-        print(",".join(self.__y_bin_files))
-
         self.__char_count = char_count
         self.__X = []
         self.__y = []
