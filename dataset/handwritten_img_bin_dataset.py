@@ -8,6 +8,7 @@
 if __name__ == '__main__':
     import sys
     sys.path.append('.')
+import functools
 from io import BufferedReader
 from alive_progress import alive_bar
 import torch
@@ -146,6 +147,23 @@ class HandWrittenBinDataSet(IterableDataset):
 
                 bar()
         
+
+        def my_compare(x0, x1):
+            file0 : str = os.path.basename(x0)
+            file1 : str = os.path.basename(x1)
+            index0 = file0[0 : file0.index('_')]
+            index1 = file1[0 : file1.index('_')]
+            index0 = int(index0)
+            index1 = int(index1)
+            if index0 > index1:
+                return 1
+            elif index1 < index0:
+                return -1
+            return 0
+
+        self.__X_bin_files = sorted(self.__X_bin_files, key=functools.cmp_to_key(my_compare))
+        self.__y_bin_files = sorted(self.__y_bin_files, key=functools.cmp_to_key(my_compare))
+
         self.__char_count = char_count
         self.__X = []
         self.__y = []
