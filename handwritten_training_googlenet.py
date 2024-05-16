@@ -51,7 +51,7 @@ def main():
     # 每次训练的批次
     batch_size = int(os.environ["BATCH_SIZE"] if os.environ.__contains__("BATCH_SIZE") else 512)
     # 循环训练的次数
-    num_epochs = int(os.environ["NUM_EPOCHS"] if os.environ.__contains__("NUM_EPOCHS") else 20)
+    num_epochs = int(os.environ["NUM_EPOCHS"] if os.environ.__contains__("NUM_EPOCHS") else 1)
     # 前几次训练不修改学习率
     patience = int(os.environ["PATIENCE"] if os.environ.__contains__("PATIENCE") else 1)
     # 训练数据集的文件夹
@@ -195,7 +195,7 @@ def main():
     for x_tran in x_trainsforms:
         test_x = x_tran(test_x)
     # test_x = test_x.reshape((1, test_x.shape[0], test_x.shape[1], test_x.shape[2]))
-
+    test_x = torch.unsqueeze(torch.Tensor(test_x), 0)
     ## 预测结果
     model.eval()
     start_time = time.time()

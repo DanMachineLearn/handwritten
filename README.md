@@ -13,6 +13,7 @@ export DATA_SET_FOLDER=work
 export MODEL_FOLDER=pretrain
 export TRAIN_FOLDER=PotTrain
 export TEST_FOLDER=PotTest
+python dataset/handwritten_pot_dataset.py
 python handwritten_training_googlenet.py
 ```
 效果并不理想
