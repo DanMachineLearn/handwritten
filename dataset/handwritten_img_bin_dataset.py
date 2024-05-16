@@ -156,13 +156,16 @@ class HandWrittenBinDataSet(IterableDataset):
             index0 = int(index0)
             index1 = int(index1)
             if index0 > index1:
-                return 1
-            elif index1 < index0:
                 return -1
+            elif index1 < index0:
+                return 1
             return 0
 
         self.__X_bin_files = sorted(self.__X_bin_files, key=functools.cmp_to_key(my_compare))
         self.__y_bin_files = sorted(self.__y_bin_files, key=functools.cmp_to_key(my_compare))
+
+        print("已加载")
+        print(",".join(self.__y_bin_files))
 
         self.__char_count = char_count
         self.__X = []
