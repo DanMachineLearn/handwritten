@@ -195,6 +195,7 @@ class HandWrittenBinDataSet(IterableDataset):
         if self.__index >= len(self.__X):
             print(f"数据错误，输出当前的变量", 
                   f"\nself.__current_bin_index = {self.__current_bin_index}", 
+                  f"\nbin = {self.__y_bin_files[self.__current_bin_index]}",
                   f"\nself.__index = {self.__index}", 
                   f"\nlen(self.__X) = {len(self.__X)}", 
                   f"\nlen(self.__y) = {len(self.__y)}")
@@ -203,6 +204,7 @@ class HandWrittenBinDataSet(IterableDataset):
         if self.__index >= len(self.__y):
             print(f"数据错误，输出当前的变量", 
                   f"\nself.__current_bin_index = {self.__current_bin_index}", 
+                  f"\nbin = {self.__y_bin_files[self.__current_bin_index]}",
                   f"\nself.__index = {self.__index}", 
                   f"\nlen(self.__X) = {len(self.__X)}", 
                   f"\nlen(self.__y) = {len(self.__y)}")
