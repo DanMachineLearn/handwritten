@@ -96,10 +96,10 @@ def main():
     x_transforms = [Channel1ToGrad8_1(), ToTensor(tensor_type=torch.float32)]
     y_transforms = [ToTensor(tensor_type=torch.long)]
 
-    train_dataset = HandWrittenBinDataSet(train=True, bin_folder=f"{DATA_SET_FOLDER}/Bin",
+    train_dataset = HandWrittenBinDataSet(train=True, bin_folder=f"{DATA_SET_FOLDER}/GntBin",
                                           x_transforms=x_transforms, y_transforms=y_transforms)
     
-    test_dataset = HandWrittenBinDataSet(train=False, bin_folder=f"{DATA_SET_FOLDER}/Bin",
+    test_dataset = HandWrittenBinDataSet(train=False, bin_folder=f"{DATA_SET_FOLDER}/GntBin",
                                           x_transforms=x_transforms, y_transforms=y_transforms)
 
     shuffle = not isinstance(train_dataset, IterableDataset) 
