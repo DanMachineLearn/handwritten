@@ -196,6 +196,19 @@ def export(train = True, out_labels : list[str] = None):
     ''' 
     导出pot成bin文件
     '''
+
+    '''
+    work/Gnt1.0/Gnt1.0Test.zip_out
+    work/Gnt1.0/Gnt1.0TrainPart1.zip_out
+    work/Gnt1.0/Gnt1.0TrainPart2.zip_out
+    work/Gnt1.0/Gnt1.0TrainPart3.zip_out
+    work/Gnt1.1/Gnt1.1Test.zip_out
+    work/Gnt1.1/Gnt1.1TrainPart1.zip_out
+    work/Gnt1.1/Gnt1.1TrainPart2.zip_out
+    work/Gnt1.2/Gnt1.2Test.zip_out
+    work/Gnt1.2/Gnt1.2TrainPart1.zip_out
+    work/Gnt1.2/Gnt1.2TrainPart2.zip_out
+    '''
     pot_folder = []
     if train:
         pot_folder.append(f"work/Gnt1.0/Gnt1.0TrainPart1.zip_out")
@@ -206,7 +219,7 @@ def export(train = True, out_labels : list[str] = None):
 
     import time
     start_time = time.time()
-    x_transforms = [ImgTo64Transform(channel_count=1)]
+    x_transforms = [ImgTo64Transform(need_dilate=False, channel_count=1)]
     y_transforms = []
     dataset = HandWrittenGntDataSet(
         gnt_folders=pot_folder, 
@@ -244,19 +257,6 @@ def export(train = True, out_labels : list[str] = None):
     return dataset
 
 def main():
-
-    '''
-    work/Gnt1.0/Gnt1.0Test.zip_out
-    work/Gnt1.0/Gnt1.0TrainPart1.zip_out
-    work/Gnt1.0/Gnt1.0TrainPart2.zip_out
-    work/Gnt1.0/Gnt1.0TrainPart3.zip_out
-    work/Gnt1.1/Gnt1.1Test.zip_out
-    work/Gnt1.1/Gnt1.1TrainPart1.zip_out
-    work/Gnt1.1/Gnt1.1TrainPart2.zip_out
-    work/Gnt1.2/Gnt1.2Test.zip_out
-    work/Gnt1.2/Gnt1.2TrainPart1.zip_out
-    work/Gnt1.2/Gnt1.2TrainPart2.zip_out
-    '''
     dataset = export(train=True)
     export(train=False, out_labels=dataset.labels)
     pass

@@ -10,7 +10,7 @@ import cv2
 import numpy as np
 import matplotlib.pyplot as plt
 
-def remap(image : np.ndarray, target_size : tuple[2] | list[2] = (64, 64), show_plt : bool = False) -> np.ndarray:
+def remap(image : np.ndarray, target_size : tuple[2] | list[2] = (64, 64), show_plt : bool = False, need_dilate = True) -> np.ndarray:
     ''' 
     采用基于笔画的整体归一化方法
     Parameters
@@ -27,6 +27,11 @@ def remap(image : np.ndarray, target_size : tuple[2] | list[2] = (64, 64), show_
 
     # 获取图像尺寸
     height, width = image.shape
+
+    if need_dilate:
+        # 膨胀和腐蚀都是对于白色像素而言的，所以对于黑色的膨胀，则需要进行白色的腐蚀。
+        kernel = np.ones((5, 5), dtype=np.uint8) # 卷积核变为4*4
+        image = cv2.erode(image, kernel, iterations=1)
 
     # 目标大小
     target_height, target_width = target_size

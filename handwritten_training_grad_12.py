@@ -154,7 +154,7 @@ def main():
         ## 用于输出训练的总进度
         model.train()  # 设置为训练模式
         train_loss = 0.0
-        # train_size = int(len(train_dataset) / batch_size)
+        train_correct = 0.0
         with alive_bar(len(train_loader)) as bar:
             for X, y in iter(train_loader):
                 X, y = X.to(device), y.to(device)
@@ -165,6 +165,11 @@ def main():
                 optimizer.step()
                 optimizer.zero_grad()  # 清空梯度
                 i+=1
+
+                predicted = torch.max(test_output.data,1)[1]
+                c = (predicted == y).type(torch.float).sum().item()
+                train_correct +=  c
+
                 # 显示进度条
                 bar()
         # 计算验证损失
@@ -187,9 +192,10 @@ def main():
                 # correct += (test_output.argmax(1).type(torch.long) == test_y).type(torch.float).sum().item()
 
         test_loss /= len(train_loader)
+        train_correct /= len(train_loader.dataset)
         correct /= len(train_loader.dataset)
         train_loss /= len(train_loader)
-        print(f"训练集: \n 平均 Loss: {train_loss:>8f}")
+        print(f"训练集: \n 准确率: {100 * train_correct:>01f}%, 平均 Loss: {train_loss:>8f}")
         print(f"测试集: \n 准确率: {100 * correct:>01f}%, 平均 Loss: {test_loss:>8f}\n")
 
         # 根据验证损失调整学习率

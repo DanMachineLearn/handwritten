@@ -9,10 +9,129 @@
 
 
 import cv2
+from matplotlib.axes import Axes
+from matplotlib.widgets import Slider
 import numpy as np
 import matplotlib.pyplot as plt
+import math
 
-def remap(image : np.ndarray, target_size : tuple[2] | list[2] = (64, 64), show_plt : bool = False) -> np.ndarray:
+
+
+def get_dx(image, aH1 = 1, aH2 = 2, aH3 = 3,around = 1):
+    '''
+    计算水平方向的密度函数
+    aH1 = 1     ## 背景为空白的像素点
+    aH2 = 2     ## 背景为笔画的像素点
+    aH3 = 3     ## 周边是汉字的像素点
+    around = 1  ## 多少范围内算作周边
+    '''
+    # 获取所有黑点位置
+    _, binary_image = cv2.threshold(image, 128, 1, cv2.THRESH_BINARY_INV)
+    # print(f"height = {binary_image.shape[0]}, width = {binary_image.shape[1]}")
+
+    # 获取图像尺寸
+    height, width = binary_image.shape
+
+    # 往最左边补充 0 计算
+    row_line_info = np.hstack((np.zeros((binary_image.shape[0], 1)), binary_image, np.zeros((binary_image.shape[0], 1))))
+    row_line_info = np.diff(row_line_info, axis=1)
+    row_line_count = np.absolute(row_line_info).sum(axis=1) / 2
+
+    col_line_info = np.vstack((np.zeros((1, binary_image.shape[1])), binary_image, np.zeros((1, binary_image.shape[1]))))
+    col_line_info = np.diff(col_line_info, axis=0)
+    col_line_count = np.absolute(row_line_info).sum(axis=0) / 2
+
+    # 水平方向
+    row_line_start = np.where(row_line_info > 0)
+    row_line_end = np.where(row_line_info < 0)
+    assert len(row_line_start[0]) == len(row_line_end[0])
+
+
+    ## TODO 计算  aBFH 
+    aBFH = np.zeros(binary_image.shape)
+    ## 为背景填充 aH1
+    aBFH.fill(aH1)
+
+    ## 为画笔周边填充 aH3
+    for i in range(len(row_line_start)):
+        start_h, start_w = row_line_start[0][i], row_line_start[1][i]
+        end_h, end_w = row_line_end[0][i], row_line_end[1][i]
+        minh = max(start_h - around, 0)
+        maxh = min(start_h + around, height)
+        minw = max(start_w - around, 0)
+        maxw = min(end_w + around, width)
+        aBFH[minh : maxh][minw : maxw] = aH3
+
+    ## 为画笔本身填充 aH2
+    aBFH[np.where(binary_image == 1)] = aH2
+
+    ## 计算水平密度函数
+    dx = np.zeros(binary_image.shape)
+    last_c = 0
+    for i in range(len(row_line_start[0])):
+        assert row_line_start[0][i] == row_line_end[0][i]
+
+
+        start = row_line_start[1][i]
+        end = row_line_end[1][i]
+
+        h = row_line_start[0][i]
+        line_count = row_line_count[h]
+
+        ## 如果该行只有1条线
+        if line_count == 1:
+            # 计算c点的位置
+            if start == 0:
+                c = start
+            else:
+                c = (start + end) // 2
+            
+            for w in range(width):
+                if w < c:
+                    o = c // 2
+                else:
+                    o = c + (width - c) // 2
+                oc = abs(o - c)
+                fenmu = (oc - abs(w - o) + 1)
+                assert fenmu != 0
+                dx[h, w] = 1 / fenmu + aBFH[h, w]
+            
+            continue
+
+        ## 如果该行有大于或等于2条线，需要获取d点位置，也就是下一条线的位置
+        if line_count > 1:
+
+            # 计算c点的位置
+            if start == 0:
+                c = start
+            else:
+                c = (start + end) // 2
+
+            # 如果最后一个点，或者 下个点的行位置和当前不一致，说明这条线是最后的
+            if i == len(row_line_start[0]) - 1:
+                c = width
+            else:
+                next_line_start = row_line_start[0][i + 1]
+                if next_line_start != h:
+                    c = width
+
+            # assert d > c
+            cd = c - last_c
+            cd2 = cd / 2
+            o = last_c + cd2
+            for w in range(last_c, c):
+                d = 1 / (cd2 - abs(w - o) + 1) + aBFH[h, w]
+                dx[h, w] = d
+            last_c = c
+            if last_c == width:
+                last_c = 0
+        else:
+            assert False 
+    return dx
+
+
+def remap(image : np.ndarray, target_size : tuple[2] | list[2] = (64, 64), show_plt : bool = False, 
+          aH1 = 1, aH2 = 2, aH3 = 3,around = 1) -> np.ndarray:
     ''' 
     采用基于笔画的整体归一化方法
     Parameters
@@ -20,7 +139,11 @@ def remap(image : np.ndarray, target_size : tuple[2] | list[2] = (64, 64), show_
     image : np.ndarray 使用cv.imread方法加载
 
     show_plt 是否显示plt图，用于测试
-    
+
+    aH1 = 1     ## 背景为空白的像素点
+    aH2 = 2     ## 背景为笔画的像素点
+    aH3 = 3     ## 周边是汉字的像素点
+    around = 1  ## 多少范围内算作周边
     Returns
     -------
     np.ndarray
@@ -39,136 +162,47 @@ def remap(image : np.ndarray, target_size : tuple[2] | list[2] = (64, 64), show_
     right = len(cols_sum) - np.argmax(cols_sum[::-1] > 0)  # 最后一个非空列
     image = image[top:bottom, left:right]
 
-    # 获取图像尺寸
-    height, width = image.shape
 
-    # 初始化 h 和 v 数组
-    h = np.full((height, width), 1, dtype=np.float32)
-    v = np.full((height, width), 1, dtype=np.float32)
+    # 计算水平和垂直的密度函数
+    dx = get_dx(image=image, aH1=aH1, aH2=aH2, aH3=aH3, around=around)
+    dy = get_dx(image=image.T, aH1=aH1, aH2=aH2, aH3=aH3, around=around).T
 
-    aH1 = 1     ## 背景为空白的像素点
-    aH2 = 2     ## 背景为笔画的像素点
-    aH3 = 3     ## 周边是汉字的像素点
-    aaH = np.full((height, width), aH2, dtype=np.float32)
-    aaV = np.full((height, width), aH2, dtype=np.float32)
+    # 整体密度函数
+    dxy = np.maximum(dx, dy)
+    # 水平密度函数
+    H = dxy.sum(axis=1)
+    # 垂直密度函数
+    V = dxy.sum(axis=0)
 
-    # 膨胀和腐蚀都是对于白色像素而言的，所以对于黑色的膨胀，则需要进行白色的腐蚀。
-    kernel = np.ones((5, 5), dtype=np.uint8) # 卷积核变为4*4
-    image = cv2.erode(image, kernel, iterations=1)
-
-    # 找到每一行和每一列的黑点位置
-    black_threshold = 127  # 定义黑点的阈值
-    black_indices_rows = [np.where(image[i, :] < black_threshold)[0] for i in range(height)]
-    black_indices_cols = [np.where(image[:, j] < black_threshold)[0] for j in range(width)]
-    for row in black_indices_rows:
-        c_point_h = np.diff(row, axis=0)
-        c_point_h = c_point_h - 1
-        print(len(c_point_h))
-
-
-    # 计算 h 和 v
-    for i in range(height):
-        if black_indices_rows[i].size > 1:
-            line_start = True
-            for j in range(1, len(black_indices_rows[i])):
-                start = black_indices_rows[i][j - 1]
-                end = black_indices_rows[i][j]
-
-
-                if line_start:
-                    line_start = False
-                    white_length = start
-                    for k in range(0, start):
-                        h[i, k] = white_length / 2 - abs(k - start) + 1
-                    aaH[i, start] = aH1
-                    aaH[start - 3, start] = aH3
-
-                white_length = end - start
-                if white_length == 1:
-                    aaH[i, start : end] = aH2
-
-                h[i, start : end] = end - start
-
-                # h 为所在点所在的白边长度，如果 背景点为笔画，则长度为0
-
-    for j in range(width):
-        if black_indices_cols[j].size > 1:
-            for i in range(1, len(black_indices_cols[j])):
-                start = black_indices_cols[j][i - 1]
-                end = black_indices_cols[j][i]
-
-    
-    # 计算 Fh 和 Fv
-    Fh = 1 / h
-    Fv = 1 / v
-
-    # 计算 H 和 V
-    H = np.sum(Fh, axis=1)
-    V = np.sum(Fv, axis=0)
-
-    # 计算累加值
-    cumulative_H = np.cumsum(H)  # 水平方向累加
-    cumulative_V = np.cumsum(V)  # 垂直方向累加
-
-    # 计算目标图像尺寸
-    # target_width = 64  # 根据目标图像的宽度定义
-    # target_height = 64  # 根据目标图像的高度定义
-    target_width, target_height = target_size
-
-    # 调整系数
-    A = target_width / cumulative_H[-1]
-    B = target_height / cumulative_V[-1]
-
-    # 创建映射矩阵
-    map_x = np.zeros((target_height, target_width), dtype=np.float32)
-    map_y = np.zeros((target_height, target_width), dtype=np.float32)
-
-    # 计算目标图像上的坐标
-    k = np.round(A * cumulative_H[:, None]).astype(int)  # 水平方向的新坐标
-    l = np.round(B * cumulative_V).astype(int)  # 垂直方向的新坐标
-
-
-    # 填充映射矩阵
-    maybe_y = np.round(A * cumulative_H)  # 水平方向的新坐标
-    maybe_x = np.round(B * cumulative_V)  # 垂直方向的新坐标
-    for y in range(target_height):
-        for x in range(target_width):
-            yy_left = np.searchsorted(maybe_y, y, side='left')
-            xx_left = np.searchsorted(maybe_x, x, side='left')
-            map_x[y, x] = xx_left
-            map_y[y, x] = yy_left
-            
-    target_image = cv2.remap(image, map_x, map_y, interpolation=cv2.INTER_LINEAR)
-
-
-    # 用坐标直接映射的办法，会导致最终图像产生锯齿
-    # target_image2 = np.zeros((target_height, target_width), dtype=np.uint8)
-    # # 将原始图像映射到目标图像
-    # for i in range(height):
-    #     for j in range(width):
-    #         if image[i, j] < black_threshold:
-    #             k_val = k[i]
-    #             l_val = l[j]
-    #             if 0 <= k_val < target_width and 0 <= l_val < target_height:
-    #                 target_image2[k_val, l_val] = 255  # 设置为黑色
-
+    image_map_y = np.zeros(dxy.shape).astype(np.float32)
+    image_map_x = np.zeros(dxy.shape).astype(np.float32)
+    M, N = dxy.shape[0], dxy.shape[1]
+    for j in range(N):
+        for i in range(M):
+            image_map_y[i, j] = round(np.sum(H[0: i]) * M / np.sum(H))
+            image_map_x[i, j] = round(np.sum(V[0: j]) * N / np.sum(V))
+    image = cv2.remap(image, image_map_x, image_map_y, cv2.INTER_LINEAR)
 
     # 显示原始图像和重映射后的图像
     if show_plt:
         plt.figure(figsize=(10, 5))
 
-        plt.subplot(1, 2, 1)
+        plt.subplot(1, 3, 1)
         plt.imshow(origin_image, cmap='gray')
         plt.title("原始图像")
 
-        plt.subplot(1, 2, 2)
-        plt.imshow(target_image, cmap='gray')
-        plt.title("使用整体密度均衡的非线性归一化图形")
+        plt.subplot(1, 3, 2)
+        plt.imshow(dxy, cmap='gray')
+        plt.title("整体密度分布")
+
+        plt.subplot(1, 3, 3)
+        plt.imshow(image, cmap='gray')
+        plt.title("均衡化之后的图像")
 
         plt.tight_layout()
         plt.show()
 
-    return target_image
+    return image
 
     
 
@@ -178,11 +212,115 @@ def main():
     plt.rcParams['font.sans-serif'] = ['SimHei'] # 用来正常显示中文标签
     plt.rcParams['axes.unicode_minus'] = False # 用来正常显示负号
 
+    global aH1     ## 背景为空白的像素点
+    aH1 = 0.1
+    global aH2     ## 背景为笔画的像素点
+    aH2 = 0.3
+    global aH3     ## 周边是汉字的像素点
+    aH3 = 0.5
+    global around  ## 多少范围内算作周边
+    around = 10
+
+    
+
 
     # 读取原始图像
-    image_path = '1.png'
-    image = cv2.imread(image_path, cv2.IMREAD_GRAYSCALE)
-    remap(image=image, show_plt=True)
+    image_paths = ['deng_1.jpg', 'deng_2.jpg', 'deng_3.jpg', 'deng_4.jpg', 'deng_5.jpg', 'deng_6.jpg']
+    images = []
+    for p in image_paths:
+        images.append(cv2.imread(p, cv2.IMREAD_GRAYSCALE))
+    
+    fig, ax = plt.subplots(len(image_paths) + 1, 2)
+    aH1_ax = plt.axes([0.1, 0.1, 0.8, 0.04])
+    aH1_slider = Slider(
+        ax = aH1_ax,
+        label="aH1",
+        valmin=0,
+        valmax=2,
+        valinit=aH1,
+    )
+
+    
+    aH2_ax = plt.axes([0.1, 0.15, 0.8, 0.04])
+    aH2_slider = Slider(
+        ax = aH2_ax,
+        label="aH2",
+        valmin=0,
+        valmax=2,
+        valinit=aH2,
+    )
+    
+    aH3_ax = plt.axes([0.1, 0.2, 0.8, 0.04])
+    aH3_slider = Slider(
+        ax = aH3_ax,
+        label="aH3",
+        valmin=0,
+        valmax=2,
+        valinit=aH3,
+    )
+    
+    around_ax = plt.axes([0.1, 0.25, 0.8, 0.04])
+    around_slider = Slider(
+        ax = around_ax,
+        label="around",
+        valmin=1,
+        valmax=20,
+        valinit=around,
+    )
+    # image_path = 'handwritten_chinese.jpg'
+    # image = cv2.imread(image_path, cv2.IMREAD_GRAYSCALE)
+    # from normalization_memtion import remap as memtion_remap
+    # image = memtion_remap(image=image)
+    # remap_image = remap(image=image, show_plt=False, aH1=aH1, aH2=aH2, aH3=aH3, around=around)
+
+    ax_map : Axes = ax[-1, 0]
+    ax_map.remove()
+    ax_map : Axes = ax[-1, 1]
+    ax_map.remove()
+
+    for i in range(len(image_paths)):
+        ax_map : Axes = ax[i, 0]
+        ax_map.imshow(images[i], cmap='gray')
+        ax_map.set_title("原图像")
+
+    ax_remap : Axes = ax[0, 1]
+    # ax_remap.imshow(remap_image, cmap='gray')
+    # ax_remap.set_title("均衡化之后的图像")
+
+    def update_img():
+        for i in range(len(image_paths)):
+            ax_map : Axes = ax[i, 1]
+            ax_map.clear()
+            image_remap = remap(image=images[i], show_plt=False, aH1=aH1, aH2=aH2, aH3=aH3, around=around)
+            ax_map.imshow(image_remap, cmap='gray')
+            ax_map.set_title("均衡化之后的图像")
+
+    def update_around(val):
+        global around
+        around = int(val)
+        update_img()
+
+    def update_aH1(val):
+        global aH1
+        aH1 = val
+        update_img()
+
+    def update_aH2(val):
+        global aH2
+        aH2 = val
+        update_img()
+
+    def update_aH3(val):
+        global aH3
+        aH3 = val
+        update_img()
+
+    around_slider.on_changed(update_around)
+    aH1_slider.on_changed(update_aH1)
+    aH2_slider.on_changed(update_aH2)
+    aH3_slider.on_changed(update_aH3)
+    update_img()
+    plt.show()
     pass
 
 if __name__ == '__main__':

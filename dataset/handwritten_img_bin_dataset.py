@@ -246,27 +246,26 @@ class HandWrittenBinDataSet(IterableDataset):
         return X, y
 
 def main():
-    pot_folder = []
-    # pot_folder.append("work/PotSimple")
-    # pot_folder.append("work/PotSimpleTest")
-    # pot_folder.append("work/PotTest")
-    pot_folder.append("work/Bin")
-    # pot_folder.append("work/data/HWDB_pot/PotTest")
-    # pot_folder.append("work/data/HWDB_pot/PotTrain")
-
-
     import time
     start_time = time.time()
-    x_transforms = [Channel1ToChannel3(), ToTensor(tensor_type=torch.float32)]
-    y_transforms = [ToTensor(tensor_type=torch.long)]
+    
+    # x_transforms = [Channel1ToChannel3(), ToTensor(tensor_type=torch.float32)]
+    # y_transforms = [ToTensor(tensor_type=torch.long)]
+    x_transforms = None
+    y_transforms = None
     dataset = HandWrittenBinDataSet(
         x_transforms=x_transforms,
         y_transforms=y_transforms,
         bin_folder="work/Bin", 
         train=True)
 
+    i = 0
     with alive_bar(len(dataset)) as bar:
         for X, y in dataset:
+            if dataset.labels[y] == '邓':
+                i += 1
+                X = X.reshape((64, 64))
+                cv.imwrite(f"deng_{i}.jpg", X)
             bar()
 
     dataset = HandWrittenBinDataSet(
@@ -276,6 +275,10 @@ def main():
         train=False)
     with alive_bar(len(dataset)) as bar:
         for X, y in dataset:
+            # print(dataset.labels[y])
+            # X = X.reshape((64, 64))
+            # cv.imshow('image', X)
+            # cv.waitKey(-1)
             bar()
 
     len(dataset)
