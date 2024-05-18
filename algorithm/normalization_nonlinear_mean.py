@@ -174,14 +174,30 @@ def remap(image : np.ndarray, target_size : tuple[2] | list[2] = (64, 64), show_
     # 垂直密度函数
     V = dxy.sum(axis=0)
 
-    image_map_y = np.zeros(dxy.shape).astype(np.float32)
-    image_map_x = np.zeros(dxy.shape).astype(np.float32)
-    M, N = dxy.shape[0], dxy.shape[1]
-    for j in range(N):
-        for i in range(M):
-            image_map_y[i, j] = round(np.sum(H[0: i]) * M / np.sum(H))
-            image_map_x[i, j] = round(np.sum(V[0: j]) * N / np.sum(V))
-    image = cv2.remap(image, image_map_x, image_map_y, cv2.INTER_LINEAR)
+    # 计算累加值
+    cumulative_H = np.cumsum(H)  # 水平方向累加
+    cumulative_V = np.cumsum(V)  # 垂直方向累加
+
+    # 调整系数
+    target_height, target_width = target_size
+    A = target_width / cumulative_H[-1]
+    B = target_height / cumulative_V[-1]
+    # 创建映射矩阵
+    map_x = np.zeros((target_height, target_width), dtype=np.float32)
+    map_y = np.zeros((target_height, target_width), dtype=np.float32)
+
+    # 填充映射矩阵
+    maybe_y = np.round(A * cumulative_H)  # 水平方向的新坐标
+    maybe_x = np.round(B * cumulative_V)  # 垂直方向的新坐标
+
+    for y in range(target_height):
+        for x in range(target_width):
+            yy_left = np.searchsorted(maybe_y, y, side='left')
+            xx_left = np.searchsorted(maybe_x, x, side='left')
+            map_x[y, x] = xx_left
+            map_y[y, x] = yy_left
+            
+    target_image = cv2.remap(image, map_x, map_y, interpolation=cv2.INTER_LINEAR)
 
     # 显示原始图像和重映射后的图像
     if show_plt:
@@ -202,7 +218,7 @@ def remap(image : np.ndarray, target_size : tuple[2] | list[2] = (64, 64), show_
         plt.tight_layout()
         plt.show()
 
-    return image
+    return target_image
 
     
 
@@ -225,7 +241,14 @@ def main():
 
 
     # 读取原始图像
-    image_paths = ['deng_1.jpg', 'deng_2.jpg', 'deng_3.jpg', 'deng_4.jpg', 'deng_5.jpg', 'deng_6.jpg']
+    # 读取原始图像
+    image_root = 'images/deng'
+    image_paths = [f'{image_root}/1.jpg', 
+                   f'{image_root}/2.jpg', 
+                   f'{image_root}/3.jpg', 
+                   f'{image_root}/4.jpg', 
+                   f'{image_root}/5.jpg',
+                   f'{image_root}/6.jpg']
     images = []
     for p in image_paths:
         images.append(cv2.imread(p, cv2.IMREAD_GRAYSCALE))
@@ -291,7 +314,7 @@ def main():
         for i in range(len(image_paths)):
             ax_map : Axes = ax[i, 1]
             ax_map.clear()
-            image_remap = remap(image=images[i], show_plt=False, aH1=aH1, aH2=aH2, aH3=aH3, around=around)
+            image_remap = remap(image=images[i], target_size=(64, 64), show_plt=False, aH1=aH1, aH2=aH2, aH3=aH3, around=around)
             ax_map.imshow(image_remap, cmap='gray')
             ax_map.set_title("均衡化之后的图像")
 

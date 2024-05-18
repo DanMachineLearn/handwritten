@@ -11,7 +11,7 @@ from matplotlib import pyplot as plt
 import numpy as np
 import cv2 as cv
 import torch
-from algorithm.normalization_nonlinear_global2 import remap
+from algorithm.normalization_nonlinear_mean import remap
 
 
 class ImgTo64Transform:

@@ -31,7 +31,7 @@ def forward_push_val(dst, dst_wid, dst_hei, val, x, y, scalex, scaley):
             yg = min(j + 1, fb) - max(j, ft)
 
             if xg > 0 and yg > 0:
-                dst[j, i] += int(xg * yg * val)
+                dst[j, i] += int(xg * yg * val * 255)
                 # dst[j, i] += xg * yg * val
 
 def forward_push_val2(dst, dst_wid, dst_hei, val, fl, ft, fr, fb, scalex, scaley):
@@ -51,7 +51,7 @@ def forward_push_val2(dst, dst_wid, dst_hei, val, fl, ft, fr, fb, scalex, scaley
             yg = min(j + 1, fb) - max(j, ft)
 
             if xg > 0 and yg > 0:
-                dst[j, i] += int(xg * yg * val)
+                dst[j, i] += int(xg * yg * val * 255)
                 # dst[j, i] += xg * yg * val
 
 
@@ -106,33 +106,64 @@ def remap(image, target_size : tuple[2] | list[2] = (64, 64), ratio_preserve_fun
     constval = 0.001
 
 
-    for y in range(0, src_hei):
-        for x in range(0, src_wid):
-            m00 += image[y, x]
-            m10 += x * image[y, x]
-            m01 += y * image[y, x]
+    # for y in range(0, src_hei):
+    #     for x in range(0, src_wid):
+    #         m00 += image[y, x]
+    #         m10 += x * image[y, x]
+    #         m01 += y * image[y, x]
 
-    if m00 == 0:
-        return
+    # if m00 == 0:
+    #     return
 
-    xc = m10 // m00
-    yc = m01 // m00
+    # center_x = m10 // m00
+    # center_y = m01 // m00
 
-    count = 0
-    for y in range(0, src_hei):
-        for x in range(0, src_wid):
-            u20 += (x - xc) ** 2 * image[y, x]
-            u02 += (y - yc) ** 2 * image[y, x]
+    # 计算图像的重心
+    # 获取非零像素的坐标
+    nonzero_indices = np.nonzero(image)
+    m00 = len(nonzero_indices[0])
+    # 计算质心
+    centroid : np.ndarray = np.mean(nonzero_indices, axis=1)
+    center_y, center_x = centroid.astype(np.int32)
+
+    # count = 0
+    # for y in range(0, src_hei):
+    #     for x in range(0, src_wid):
+    #         u20 += (x - center_x) ** 2 * image[y, x]
+    #         u02 += (y - center_y) ** 2 * image[y, x]
+
+    
+    # u02_1 = 0
+    # u20_1 = 0
+    # for i in range(len(non_zero_y)):
+    #     y = non_zero_y[i]
+    #     x = non_zero_x[i]
+    #     u02_1 += (y - center_y) ** 2
+    #     u20_1 += (x - center_x) ** 2
+
+    u20 = 0
+    u02 = 0
+    non_zero_y = nonzero_indices[0]
+    non_zero_x = nonzero_indices[1]
+    non_zero_y -= center_y
+    non_zero_x -= center_x
+    u20 = np.square(non_zero_x)
+    u02 = np.square(non_zero_y)
+    u20 = np.sum(u20)
+    u02 = np.sum(u02)
+
+    # assert u20 == u20 and u20 == u20_1
+    # assert u02 == u02 and u02 == u02_1
 
     w1 = int(4 * math.sqrt(u20 / m00))
     h1 = int(4 * math.sqrt(u02 / m00))
     # w1 = int(4 * math.sqrt(u20_mean / m00 * count))
     # h1 = int(4 * math.sqrt(u02_mean / m00 * count))
 
-    l = max(min(xc - w1 // 2, src_wid), 0)
-    r = max(min(xc + w1 // 2 + 1, src_wid), 0)
-    t = max(min(yc - h1 // 2, src_hei), 0)
-    b = max(min(yc + h1 // 2 + 1, src_hei), 0)
+    l = max(min(center_x - w1 // 2, src_wid), 0)
+    r = max(min(center_x + w1 // 2 + 1, src_wid), 0)
+    t = max(min(center_y - h1 // 2, src_hei), 0)
+    b = max(min(center_y + h1 // 2 + 1, src_hei), 0)
 
     dx = np.zeros((b - t, r - l), dtype=float)
     dy = np.zeros((b - t, r - l), dtype=float)
@@ -142,7 +173,7 @@ def remap(image, target_size : tuple[2] | list[2] = (64, 64), ratio_preserve_fun
     hy = np.zeros((b - t,), dtype=float)
 
 
-    image = image * 255
+    # image = image * 255
     for y in range(t, b):
         run_start = -1
         run_end = -1
@@ -236,8 +267,8 @@ def remap(image, target_size : tuple[2] | list[2] = (64, 64), ratio_preserve_fun
             x1 = w2 * hx[x - l]
             y1 = h2 * hy[y - t]
 
-            if image[y, x] == 1:
-                image[y, x] = image[y, x]
+            # if image[y, x] == 1:
+            #     image[y, x] = image[y, x]
 
             if y == b - 1 or x == r - 1:
                 forward_push_val(dst, dst_wid, dst_hei, image[y, x], x1 + xoffset, y1 + yoffset, xscale, yscale)

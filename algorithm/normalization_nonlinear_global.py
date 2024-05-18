@@ -86,9 +86,9 @@ def remap(image : np.ndarray, target_size : tuple[2] | list[2] = (64, 64), show_
     map_x = np.zeros((target_height, target_width), dtype=np.float32)
     map_y = np.zeros((target_height, target_width), dtype=np.float32)
 
-    # 计算目标图像上的坐标
-    k = np.round(A * cumulative_H[:, None]).astype(int)  # 水平方向的新坐标
-    l = np.round(B * cumulative_V).astype(int)  # 垂直方向的新坐标
+    # # 计算目标图像上的坐标
+    # k = np.round(A * cumulative_H[:, None]).astype(int)  # 水平方向的新坐标
+    # l = np.round(B * cumulative_V).astype(int)  # 垂直方向的新坐标
 
 
     # 填充映射矩阵
@@ -148,7 +148,14 @@ def main():
 
 
     # 读取原始图像
-    image_paths = ['deng_1.jpg', 'deng_2.jpg', 'deng_3.jpg', 'deng_4.jpg', 'deng_5.jpg', 'deng_6.jpg']
+    # 读取原始图像
+    image_root = 'images/deng'
+    image_paths = [f'{image_root}/1.jpg', 
+                   f'{image_root}/2.jpg', 
+                   f'{image_root}/3.jpg', 
+                   f'{image_root}/4.jpg', 
+                   f'{image_root}/5.jpg',
+                   f'{image_root}/6.jpg']
     images = []
     for p in image_paths:
         images.append(cv2.imread(p, cv2.IMREAD_GRAYSCALE))
