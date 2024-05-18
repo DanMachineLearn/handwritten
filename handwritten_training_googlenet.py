@@ -15,6 +15,7 @@ import numpy as np
 from torch.utils.data import DataLoader
 from alive_progress import alive_bar
 from algorithm.channel1_to_channel3 import Channel1ToChannel3
+from algorithm.channel1_to_gabor8_1 import Channel1ToGabor8_1
 from algorithm.channel1_to_grad8_1 import Channel1ToGrad8_1
 from dataset.handwritten_img_bin_dataset import HandWrittenBinDataSet
 from models.HCCRGoogLeNetModel import GaborGoogLeNet
@@ -54,7 +55,7 @@ def main():
     # 每次训练的批次
     batch_size = int(os.environ["BATCH_SIZE"] if os.environ.__contains__("BATCH_SIZE") else 512)
     # 循环训练的次数
-    num_epochs = int(os.environ["NUM_EPOCHS"] if os.environ.__contains__("NUM_EPOCHS") else 50)
+    num_epochs = int(os.environ["NUM_EPOCHS"] if os.environ.__contains__("NUM_EPOCHS") else 15)
     # 前几次训练不修改学习率
     patience = int(os.environ["PATIENCE"] if os.environ.__contains__("PATIENCE") else 1)
     # 训练数据集的文件夹
@@ -93,13 +94,14 @@ def main():
     ## 加载数据集
 
     # x_transforms = [Channel1ToChannel3(), ToTensor(tensor_type=torch.float32)]
-    x_transforms = [Channel1ToGrad8_1(), ToTensor(tensor_type=torch.float32)]
+    # x_transforms = [Channel1ToGrad8_1(), ToTensor(tensor_type=torch.float32)]
+    x_transforms = [Channel1ToGabor8_1(), ToTensor(tensor_type=torch.float32)]
     y_transforms = [ToTensor(tensor_type=torch.long)]
 
-    train_dataset = HandWrittenBinDataSet(train=True, bin_folder=f"{DATA_SET_FOLDER}/GntBin",
+    train_dataset = HandWrittenBinDataSet(train=True, bin_folder=f"{DATA_SET_FOLDER}/Bin",
                                           x_transforms=x_transforms, y_transforms=y_transforms)
     
-    test_dataset = HandWrittenBinDataSet(train=False, bin_folder=f"{DATA_SET_FOLDER}/GntBin",
+    test_dataset = HandWrittenBinDataSet(train=False, bin_folder=f"{DATA_SET_FOLDER}/Bin",
                                           x_transforms=x_transforms, y_transforms=y_transforms)
 
     shuffle = not isinstance(train_dataset, IterableDataset) 
@@ -206,6 +208,7 @@ def main():
         test_x = x_tran(test_x)
     # test_x = test_x.reshape((1, test_x.shape[0], test_x.shape[1], test_x.shape[2]))
     test_x = torch.unsqueeze(torch.Tensor(test_x), 0)
+    test_x.to(device=device)
     ## 预测结果
     model.eval()
     start_time = time.time()

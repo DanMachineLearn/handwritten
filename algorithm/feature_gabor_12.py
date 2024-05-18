@@ -10,7 +10,7 @@ import numpy as np
 import cv2
 import matplotlib.pyplot as plt  # 用于绘图
 
-def get_features(image : np.ndarray, show_plt : bool = False):
+def get_features(image : np.ndarray, show_plt : bool = False, image_only=False, direction_count=12):
     ''' 
     
     Parameters
@@ -42,19 +42,21 @@ def get_features(image : np.ndarray, show_plt : bool = False):
         filtered_img = cv2.filter2D(image, cv2.CV_32F, gabor_filter)  # 应用滤波器
         gabor_images.append(filtered_img)
 
-    if show_plt:
-        # 创建一个3x4的图网格来显示结果
-        plt.figure(figsize=(12, 9))
-        for i, feature_map in enumerate(feature_maps):
-            plt.subplot(3, 4, i + 1)
-            plt.imshow(feature_map, cmap='gray')
-            plt.title(f' {int(angles[i] * 180 / np.pi)} 度')
-            plt.axis('off')  # 关闭坐标轴
+    return gabor_images;
 
-        plt.tight_layout()  # 调整子图间距
-        plt.show()  # 显示图
+    # if show_plt:
+    #     # 创建一个3x4的图网格来显示结果
+    #     plt.figure(figsize=(12, 9))
+    #     for i, feature_map in enumerate(feature_maps):
+    #         plt.subplot(3, 4, i + 1)
+    #         plt.imshow(feature_map, cmap='gray')
+    #         plt.title(f' {int(angles[i] * 180 / np.pi)} 度')
+    #         plt.axis('off')  # 关闭坐标轴
 
-    return np.array(feature_maps).flatten()
+    #     plt.tight_layout()  # 调整子图间距
+    #     plt.show()  # 显示图
+
+    # return np.array(feature_maps).flatten()
 
 
 def main():
