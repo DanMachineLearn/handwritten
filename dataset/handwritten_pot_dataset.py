@@ -110,9 +110,6 @@ class HandWrittenDataSet(IterableDataset):
             self.__x_transforms = [ImgTo4DirectionTransform(frame_count)]
         self.__y_transforms = y_transforms
 
-        # x 的特征数量，取决于最后一个转换器
-        self.__input_shape = self.__x_transforms[-1].input_shape
-
         ## 如果存在one hot 的转换器，需要传入总类别
         for y_trans in self.__y_transforms:
             if isinstance(y_trans, ToOneHot):
@@ -183,22 +180,29 @@ class HandWrittenDataSet(IterableDataset):
         return X, y
 
 
-def export(train = True, out_labels : list[str] = None):
+def export(train = True, out_labels : list[str] = None, chars_only : list[str] = None):
     ''' 
     导出pot成bin文件
+
+    chars_only = None 只导出特定的字符
     '''
     train_folder = os.environ["TRAIN_FOLDER"] if os.environ.__contains__("TRAIN_FOLDER") else "PotSimple"
     # 测试数据集的文件夹
     test_folder = os.environ["TEST_FOLDER"] if os.environ.__contains__("TEST_FOLDER") else "PotSimpleTest"
     pot_folder = []
     if train:
-        pot_folder.append(f"work/{train_folder}")
+        pot_folder.append(f"work/Pot1.0/Pot1.0Train.zip_out")
+        # pot_folder.append(f"work/Pot1.1/Pot1.1Train.zip_out")
+        # pot_folder.append(f"work/Pot1.2/Pot1.2Train.zip_out")
     else:
-        pot_folder.append(f"work/{test_folder}")
+        pot_folder.append(f"work/Pot1.0/Pot1.0Test.zip_out")
+        # pot_folder.append(f"work/Pot1.1/Pot1.1Test.zip_out")
+        # pot_folder.append(f"work/Pot1.2/Pot1.2Test.zip_out")
 
     import time
     start_time = time.time()
-    x_transforms = [ImgTo64Transform(channel_count=1)]
+    # x_transforms = [ImgTo64Transform(channel_count=1)]
+    x_transforms = []
     y_transforms = []
     dataset = HandWrittenDataSet(
         pot_folders=pot_folder, 
@@ -213,6 +217,11 @@ def export(train = True, out_labels : list[str] = None):
     torch.save(dataset.labels, f'work/Bin/labels.bin')
     with alive_bar(len(dataset)) as bar:
         for X, y in dataset:
+            if chars_only is not None:
+                char = dataset.labels[y]
+                if not chars_only.__contains__(char):
+                    bar()
+                    continue
             XX.append(X)
             yy.append(y)
             i += 1
@@ -236,8 +245,9 @@ def export(train = True, out_labels : list[str] = None):
     return dataset
 
 def main():
-    dataset = export(train=True)
-    export(train=False, out_labels=dataset.labels)
+    chars_only=['一', '二', '邓', '登']
+    dataset = export(train=True, chars_only=chars_only)
+    export(train=False, out_labels=dataset.labels, chars_only=chars_only)
     pass
 
 if __name__ == '__main__':

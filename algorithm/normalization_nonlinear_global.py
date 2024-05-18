@@ -30,15 +30,16 @@ def remap(image : np.ndarray, target_size : tuple[2] | list[2] = (64, 64), show_
     height, width = image.shape
 
     # 定义极大常数
-    max_constant = float('inf')
+    # max_constant = float('inf')
+    max_constant = 1000
 
     # 初始化 h 和 v 数组
     h = np.full((height, width), max_constant, dtype=np.float32)
     v = np.full((height, width), max_constant, dtype=np.float32)
 
     # 膨胀和腐蚀都是对于白色像素而言的，所以对于黑色的膨胀，则需要进行白色的腐蚀。
-    kernel = np.ones((5, 5), dtype=np.uint8) # 卷积核变为4*4
-    image = cv2.erode(image, kernel, iterations=1)
+    # kernel = np.ones((5, 5), dtype=np.uint8) # 卷积核变为4*4
+    # image = cv2.erode(image, kernel, iterations=1)
 
     # 找到每一行和每一列的黑点位置
     black_threshold = 127  # 定义黑点的阈值
@@ -136,17 +137,40 @@ def remap(image : np.ndarray, target_size : tuple[2] | list[2] = (64, 64), show_
 
 
 def main():
+    '''
+    
+    '''
+    from matplotlib.axes import Axes
+    from matplotlib.widgets import Slider
     # 支持中文
     plt.rcParams['font.sans-serif'] = ['SimHei'] # 用来正常显示中文标签
     plt.rcParams['axes.unicode_minus'] = False # 用来正常显示负号
 
 
     # 读取原始图像
-    image_path = '1.png'
-    image = cv2.imread(image_path, cv2.IMREAD_GRAYSCALE)
-    remap(image=image, show_plt=True)
+    image_paths = ['deng_1.jpg', 'deng_2.jpg', 'deng_3.jpg', 'deng_4.jpg', 'deng_5.jpg', 'deng_6.jpg']
+    images = []
+    for p in image_paths:
+        images.append(cv2.imread(p, cv2.IMREAD_GRAYSCALE))
+    
+    fig, ax = plt.subplots(len(image_paths), 2)
+
+    for i in range(len(image_paths)):
+        ax_map : Axes = ax[i, 0]
+        ax_map.imshow(images[i], cmap='gray')
+        ax_map.set_title("原图像")
+
+    def update_img():
+        for i in range(len(image_paths)):
+            ax_map : Axes = ax[i, 1]
+            ax_map.clear()
+            image_remap = remap(image=images[i], show_plt=False)
+            ax_map.imshow(image_remap, cmap='gray')
+            ax_map.set_title("均衡化之后的图像")
+
+    update_img()
+    plt.show()
     pass
 
 if __name__ == '__main__':
     main()
-
