@@ -131,7 +131,7 @@ def get_dx(image, aH1 = 1, aH2 = 2, aH3 = 3,around = 1):
 
 
 def remap(image : np.ndarray, target_size : tuple[2] | list[2] = (64, 64), show_plt : bool = False, 
-          aH1 = 1, aH2 = 2, aH3 = 3,around = 1) -> np.ndarray:
+          aH1 = 0.1, aH2 = 0.2, aH3 = 0.5, around = 10) -> np.ndarray:
     ''' 
     采用基于笔画的整体归一化方法
     Parameters
