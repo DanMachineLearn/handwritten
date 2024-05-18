@@ -11,7 +11,7 @@ import matplotlib.pyplot as plt  # 用于绘图
 from math import pi, cos, sin  # 用于计算方向角
 
 # 读取图像
-image_path = 'handwritten_chinese.jpg'  # 替换为你的图像路径
+image_path = 'deng.jpg'  # 替换为你的图像路径
 image = cv2.imread(image_path, cv2.IMREAD_GRAYSCALE)  # 读取为灰度图像
 
 # Sobel参数

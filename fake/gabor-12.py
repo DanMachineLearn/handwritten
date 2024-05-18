@@ -3,7 +3,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 
 # 加载jpg图像
-image_path = 'handwritten_chinese.jpg'  # 替换为你的图像路径
+image_path = 'deng.jpg'  # 替换为你的图像路径
 image = cv2.imread(image_path, cv2.IMREAD_GRAYSCALE)  # 加载为灰度图像
 
 # 检查图像是否成功加载

@@ -262,10 +262,10 @@ def main():
     i = 0
     with alive_bar(len(dataset)) as bar:
         for X, y in dataset:
-            if dataset.labels[y] == '一':
+            if dataset.labels[y] == '邓':
                 i += 1
                 # X = X.reshape((64, 64))
-                cv.imwrite(f"images/yi/{i}.jpg", X)
+                cv.imwrite(f"images/deng/{i}.jpg", X)
             bar()
 
     dataset = HandWrittenBinDataSet(

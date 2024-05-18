@@ -46,7 +46,7 @@ class ImgToGrad12Transform:
 
 
 def main():
-    image_path = "handwritten_chinese.jpg"
+    image_path = "deng.jpg"
     image = cv.imread(image_path, cv.IMREAD_GRAYSCALE)
     transform = ImgToGrad12Transform(show_plt=True)
     features = transform(image)

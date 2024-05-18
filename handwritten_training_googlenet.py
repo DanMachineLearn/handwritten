@@ -202,7 +202,7 @@ def main():
 
     all_classes = train_dataset.labels
     
-    test_x = "handwritten_chinese.jpg"
+    test_x = "deng.jpg"
     x_trainsforms = [ImgTo64Transform(need_dilate=True, channel_count=1), Channel1ToGrad8_1(), ToTensor(tensor_type=torch.float32)]
     for x_tran in x_trainsforms:
         test_x = x_tran(test_x)

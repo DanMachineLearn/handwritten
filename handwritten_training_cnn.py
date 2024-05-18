@@ -189,7 +189,7 @@ def main():
 
     all_classes = train_dataset.labels
     
-    test_x = "handwritten_chinese.jpg"
+    test_x = "deng.jpg"
     for x_tran in x_transforms:
         test_x = x_tran(test_x)
     test_x = test_x.reshape((1, test_x.shape[0], test_x.shape[1], test_x.shape[2]))

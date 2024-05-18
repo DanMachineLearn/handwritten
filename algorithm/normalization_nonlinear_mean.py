@@ -267,7 +267,7 @@ def main():
         valmax=20,
         valinit=around,
     )
-    # image_path = 'handwritten_chinese.jpg'
+    # image_path = 'deng.jpg'
     # image = cv2.imread(image_path, cv2.IMREAD_GRAYSCALE)
     # from normalization_memtion import remap as memtion_remap
     # image = memtion_remap(image=image)

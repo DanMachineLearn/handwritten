@@ -347,7 +347,7 @@ class ImgTo4DirectionTransform:
 
 def main():
     transform = ImgTo4DirectionTransform(show_plt=True)
-    transform(img="handwritten_chinese.jpg")
+    transform(img="deng.jpg")
     pass
 
 if __name__ == '__main__':

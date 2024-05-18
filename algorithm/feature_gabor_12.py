@@ -65,7 +65,7 @@ def main():
     plt.rcParams['axes.unicode_minus'] = False # 用来正常显示负号
 
     # 读取原始图像
-    image_path = 'handwritten_chinese.jpg'
+    image_path = 'deng.jpg'
     image = cv2.imread(image_path, cv2.IMREAD_GRAYSCALE)
     image = remap(image=image)
     get_features(image, show_plt=True)

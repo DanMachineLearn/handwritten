@@ -11,7 +11,7 @@ import cv2
 import numpy as np
 import matplotlib.pyplot as plt
 from normalization_memtion import remap as memtion_remap
-from normalization_nonlinear_global import remap as global_remap
+from normalization_nonlinear_global2 import remap as global_remap
 
 
 def remap(image : np.ndarray, target_size : tuple[2] | list[2] = (64, 64), show_plt : bool = False) -> np.ndarray:
@@ -54,7 +54,7 @@ def main():
 
 
     # 读取原始图像
-    image_path = 'handwritten_chinese.jpg'
+    image_path = 'deng.jpg'
     image = cv2.imread(image_path, cv2.IMREAD_GRAYSCALE)
     remap(image=image, show_plt=True)
     pass

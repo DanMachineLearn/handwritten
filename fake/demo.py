@@ -3,7 +3,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 
 # 读取图像并转换为灰度
-image_path = 'handwritten_chinese.jpg'  # 替换为你的图像路径
+image_path = 'deng.jpg'  # 替换为你的图像路径
 image = cv2.imread(image_path, cv2.IMREAD_GRAYSCALE)
 
 # 二值化图像

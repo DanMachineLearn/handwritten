@@ -151,7 +151,7 @@ def main():
     all_classes = train_dataset.labels
     jpg_transform = ImgToGrad12Transform()
     import cv2
-    features = jpg_transform(cv2.imread("handwritten_chinese.jpg", cv2.IMREAD_GRAYSCALE))
+    features = jpg_transform(cv2.imread("deng.jpg", cv2.IMREAD_GRAYSCALE))
     features = features.reshape((1, -1))
 
     ## 预测结果

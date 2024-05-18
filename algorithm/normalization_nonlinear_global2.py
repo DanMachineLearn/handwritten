@@ -7,6 +7,7 @@
 '''
 import numpy as np
 import math
+import cv2
 
 def forward_push_val(dst, dst_wid, dst_hei, val, x, y, scalex, scaley):
     fl = x - scalex / 2
@@ -31,6 +32,7 @@ def forward_push_val(dst, dst_wid, dst_hei, val, x, y, scalex, scaley):
 
             if xg > 0 and yg > 0:
                 dst[j, i] += int(xg * yg * val)
+                # dst[j, i] += xg * yg * val
 
 def forward_push_val2(dst, dst_wid, dst_hei, val, fl, ft, fr, fb, scalex, scaley):
     l = int(fl)
@@ -50,6 +52,7 @@ def forward_push_val2(dst, dst_wid, dst_hei, val, fl, ft, fr, fb, scalex, scaley
 
             if xg > 0 and yg > 0:
                 dst[j, i] += int(xg * yg * val)
+                # dst[j, i] += xg * yg * val
 
 
 RADIOFUNC_FIXED = 0
@@ -70,8 +73,14 @@ def aspect_radio_mapping(r1, dst_wid, dst_hei, ratio_preserve_func):
     else:
         return min(dst_wid, dst_hei) / max(dst_wid, dst_hei)
 
-def remap(image, target_size : tuple[2] | list[2] = (64, 64), ratio_preserve_func = RADIOFUNC_ASPECT):
+def remap(image, target_size : tuple[2] | list[2] = (64, 64), ratio_preserve_func = RADIOFUNC_SQUARE, show_plt=False):
     '''
+    RADIOFUNC_FIXED = 0
+    RADIOFUNC_ASPECT = 1
+    RADIOFUNC_SQUARE = 2
+    RADIOFUNC_CUBIC = 3
+    RADIOFUNC_SINE = 4
+
     src, 原图像
     src_wid, 图像宽度
     src_hei, 图像高度
@@ -86,8 +95,10 @@ def remap(image, target_size : tuple[2] | list[2] = (64, 64), ratio_preserve_fun
     src_wid = image.shape[1]
     src_hei = image.shape[0]
     dst = np.zeros(target_size, dtype=np.uint8)
-    dst_wid = image.shape[1]
-    dst_hei = image.shape[0]
+    dst_wid = dst.shape[1]
+    dst_hei = dst.shape[0]
+
+    _, image = cv2.threshold(image, 127, 1, cv2.THRESH_BINARY_INV)
 
     m00, m10, m01 = 0, 0, 0
     u20, u02 = 0, 0
@@ -107,13 +118,25 @@ def remap(image, target_size : tuple[2] | list[2] = (64, 64), ratio_preserve_fun
     xc = m10 // m00
     yc = m01 // m00
 
+    count = 0
     for y in range(0, src_hei):
         for x in range(0, src_wid):
+            # count += 1
+            # u20_value = (x - xc) ** 2 * image[y, x]
+            # u02_value = (y - yc) ** 2 * image[y, x]
+            # if count == 1:
+            #     u20_mean = u20_value
+            #     u02_mean = u02_value
+            # else:
+            #     u20_mean = u20_mean - (u20_mean - u20_value) / count
+            #     u02_mean = u02_mean - (u02_mean - u02_value) / count
             u20 += (x - xc) ** 2 * image[y, x]
             u02 += (y - yc) ** 2 * image[y, x]
 
     w1 = int(4 * math.sqrt(u20 / m00))
     h1 = int(4 * math.sqrt(u02 / m00))
+    # w1 = int(4 * math.sqrt(u20_mean / m00 * count))
+    # h1 = int(4 * math.sqrt(u02_mean / m00 * count))
 
     l = max(min(xc - w1 // 2, src_wid), 0)
     r = max(min(xc + w1 // 2 + 1, src_wid), 0)
@@ -127,11 +150,13 @@ def remap(image, target_size : tuple[2] | list[2] = (64, 64), ratio_preserve_fun
     hx = np.zeros((r - l,), dtype=float)
     hy = np.zeros((b - t,), dtype=float)
 
+
+    image = image * 255
     for y in range(t, b):
         run_start = -1
         run_end = -1
         for x in range(l, r):
-            if image[y, x] < 128:
+            if image[y, x] < 1:
                 if run_start < 0:
                     run_start = x
                     run_end = x
@@ -155,7 +180,7 @@ def remap(image, target_size : tuple[2] | list[2] = (64, 64), ratio_preserve_fun
         run_start = -1
         run_end = -1
         for y in range(t, b):
-            if image[y, x] < 128:
+            if image[y, x] < 1:
                 if run_start < 0:
                     run_start = y
                     run_end = y
@@ -205,6 +230,13 @@ def remap(image, target_size : tuple[2] | list[2] = (64, 64), ratio_preserve_fun
         xoffset = (dst_wid - w2) / 2
         yoffset = 0
 
+    # if yoffset > 0:
+    #     dst[int(0) : int(yoffset) + 1, :] = 255
+    #     dst[int(yoffset) + h2 : dst_hei, :] = 255
+    # else:
+    #     dst[:, 0 : int(xoffset)] = 1
+    #     dst[:, int(xoffset) + w2 : dst_wid] = 255
+
     xscale = w2 / w1
     yscale = h2 / h1
 
@@ -213,7 +245,7 @@ def remap(image, target_size : tuple[2] | list[2] = (64, 64), ratio_preserve_fun
             x1 = w2 * hx[x - l]
             y1 = h2 * hy[y - t]
 
-            if image[y, x] > 128:
+            if image[y, x] == 1:
                 image[y, x] = image[y, x]
 
             if y == b - 1 or x == r - 1:
@@ -242,7 +274,7 @@ def main():
 
 
     # 读取原始图像
-    image_root = 'images/yi'
+    image_root = 'images/deng'
     image_paths = [f'{image_root}/1.jpg', 
                    f'{image_root}/2.jpg', 
                    f'{image_root}/3.jpg', 
