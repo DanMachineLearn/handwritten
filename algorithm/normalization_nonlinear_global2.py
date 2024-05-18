@@ -70,7 +70,7 @@ def aspect_radio_mapping(r1, dst_wid, dst_hei, ratio_preserve_func):
     else:
         return min(dst_wid, dst_hei) / max(dst_wid, dst_hei)
 
-def remap(image, ratio_preserve_func = RADIOFUNC_ASPECT):
+def remap(image, target_size : tuple[2] | list[2] = (64, 64), ratio_preserve_func = RADIOFUNC_ASPECT):
     '''
     src, 原图像
     src_wid, 图像宽度
@@ -85,7 +85,7 @@ def remap(image, ratio_preserve_func = RADIOFUNC_ASPECT):
     '''
     src_wid = image.shape[1]
     src_hei = image.shape[0]
-    dst = np.zeros(image.shape, dtype=np.uint8)
+    dst = np.zeros(target_size, dtype=np.uint8)
     dst_wid = image.shape[1]
     dst_hei = image.shape[0]
 

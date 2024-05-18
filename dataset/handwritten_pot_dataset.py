@@ -104,10 +104,7 @@ class HandWrittenDataSet(IterableDataset):
         self.__labels = []
         self.__file_count = 0
 
-        if x_transforms:
-            self.__x_transforms = x_transforms
-        else:
-            self.__x_transforms = [ImgTo4DirectionTransform(frame_count)]
+        self.__x_transforms = x_transforms
         self.__y_transforms = y_transforms
 
         ## 如果存在one hot 的转换器，需要传入总类别
@@ -245,7 +242,8 @@ def export(train = True, out_labels : list[str] = None, chars_only : list[str] =
     return dataset
 
 def main():
-    chars_only=['一', '二', '邓', '登']
+    # chars_only=['一', '二', '邓', '登']
+    chars_only=None
     dataset = export(train=True, chars_only=chars_only)
     export(train=False, out_labels=dataset.labels, chars_only=chars_only)
     pass
