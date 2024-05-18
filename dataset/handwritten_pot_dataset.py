@@ -189,12 +189,12 @@ def export(train = True, out_labels : list[str] = None, chars_only : list[str] =
     pot_folder = []
     if train:
         pot_folder.append(f"work/Pot1.0/Pot1.0Train.zip_out")
-        # pot_folder.append(f"work/Pot1.1/Pot1.1Train.zip_out")
-        # pot_folder.append(f"work/Pot1.2/Pot1.2Train.zip_out")
+        pot_folder.append(f"work/Pot1.1/Pot1.1Train.zip_out")
+        pot_folder.append(f"work/Pot1.2/Pot1.2Train.zip_out")
     else:
         pot_folder.append(f"work/Pot1.0/Pot1.0Test.zip_out")
-        # pot_folder.append(f"work/Pot1.1/Pot1.1Test.zip_out")
-        # pot_folder.append(f"work/Pot1.2/Pot1.2Test.zip_out")
+        pot_folder.append(f"work/Pot1.1/Pot1.1Test.zip_out")
+        pot_folder.append(f"work/Pot1.2/Pot1.2Test.zip_out")
 
     import time
     start_time = time.time()
