@@ -32,15 +32,31 @@ def get_features(image : np.ndarray, show_plt : bool = False, image_only=False, 
 
     # 创建Gabor滤波器
     gabor_bank = []
-    for angle in np.linspace(0, np.pi, 12, endpoint=False):  # 分12个角度
+    for angle in np.linspace(0, np.pi, direction_count, endpoint=False):  # 分12个角度
         gabor_filter = cv2.getGaborKernel(ksize, sigma, angle, lambd, gamma, psi, ktype=cv2.CV_32F)
         gabor_bank.append(gabor_filter)
+
+    height_count = image.shape[0] // 8
+    width_count = image.shape[1] // 8
+    features = []
 
     # 应用Gabor滤波器
     gabor_images = []
     for gabor_filter in gabor_bank:
         filtered_img = cv2.filter2D(image, cv2.CV_32F, gabor_filter)  # 应用滤波器
         gabor_images.append(filtered_img)
+        if image_only:
+            continue;
+        xxx_list = np.vsplit(filtered_img, height_count)
+        for xx in xxx_list:
+            x_list = np.hsplit(xx, width_count)
+            for x in x_list:
+                # block_8_8 = np.sum(x)
+                # 改为亚采样，即获取 该区域的平均值
+                block_8_8 = np.mean(x)
+                features.append(block_8_8)
+    if not image_only:
+        return np.array(features).flatten()
 
     return gabor_images;
 

@@ -66,4 +66,5 @@ class Channel1ToGabor8_1:
                 features[7]))
             return img
         else:
-            return features
+            features = np.array(features)
+            return features.flatten()

@@ -27,9 +27,16 @@ class GRUModel(nn.Module):
         out = self.fc(out)
         return out
 
-input_size = 1
-hidden_size = 50
-output_size = 1
-num_layers = 1
+def main():
+    input_size = 1
+    hidden_size = 50
+    output_size = 1
+    num_layers = 1
 
-model = GRUModel(input_size, hidden_size, output_size, num_layers)
+    model = GRUModel(input_size, hidden_size, output_size, num_layers)
+    print(model)
+
+if __name__ == '__main__':
+    main()
+
+

@@ -245,8 +245,8 @@ def export(train = True, out_labels : list[str] = None, chars_only : list[str] =
 def main():
     # chars_only=['一', '二', '邓', '登']
     chars_only=None
-    dataset = export(train=True, chars_only=chars_only, max_char=100000)
-    export(train=False, out_labels=dataset.labels, chars_only=chars_only, max_char=30000)
+    dataset = export(train=True, chars_only=chars_only, max_char=40000)
+    export(train=False, out_labels=dataset.labels, chars_only=chars_only, max_char=10000)
     pass
 
 if __name__ == '__main__':

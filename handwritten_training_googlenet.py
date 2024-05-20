@@ -185,9 +185,9 @@ def main():
 
                 max_args = test_output.argmax(dim = 1)
                 correct += (test_output.argmax(1) == test_y).type(torch.float).sum().item()
-        test_loss /= len(train_loader)
+        test_loss /= len(test_loader)
         train_correct /= len(train_loader.dataset)
-        correct /= len(train_loader.dataset)
+        correct /= len(test_loader.dataset)
         train_loss /= len(train_loader)
         print(f"训练集: \n 准确率: {100 * train_correct:>01f}%, 平均 Loss: {train_loss:>8f}")
         print(f"测试集: \n 准确率: {100 * correct:>01f}%, 平均 Loss: {test_loss:>8f}\n")

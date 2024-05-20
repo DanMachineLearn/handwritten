@@ -107,14 +107,23 @@ def main():
         print(f"训练循环第{epoch + 1}个:")
         ## 用于输出训练的总进度
         model.train()  # 设置为训练模式
+        train_loss = 0.0
+        train_correct = 0.0
         # train_size = int(len(train_dataset) / batch_size)
         with alive_bar(len(train_loader)) as bar:
             for inputs, real_y in train_loader:
                 outputs = model(inputs)  # 前向传播
                 loss = criterion(outputs, real_y) 
+                train_loss += loss.item()
+
+                predicted = torch.max(outputs.data,1)[1]
+                c = (predicted == real_y).type(torch.float).sum().item()
+                train_correct +=  c
+
                 loss.backward(retain_graph=False)  # 反向传播，不累计梯度
                 optimizer.step()
                 optimizer.zero_grad()  # 清空梯度
+                
                 # if i % 1000 == 0:
                 #     print(f"Epoch {epoch + 1}/{num_epochs}, Train Loss: {loss.item():.4f}, Process: {process / train_count * 100:.1f}%")
                 # 显示进度条
@@ -130,9 +139,14 @@ def main():
                 val_loss = criterion(outputs, test_labels)
                 test_loss += val_loss.item()
                 correct += (outputs.argmax(1) == test_labels).type(torch.float).sum().item()
-        test_loss /= num_batchs
-        correct /= size
-        print(f"Test Error: \n Accuracy: {100 * correct:>01f}%, Avg loss: {test_loss:>8f}\n")
+        
+        train_correct /= len(train_loader.dataset)
+        train_loss /= len(train_loader)
+        test_loss /= len(test_loader)
+        correct /= len(test_loader.dataset)
+
+        print(f"训练集: \n 准确率: {100 * train_correct:>01f}%, 平均 Loss: {train_loss:>8f}")
+        print(f"测试集: \n 准确率: {100 * correct:>01f}%, 平均 Loss: {test_loss:>8f}\n")
 
         # 根据验证损失调整学习率
         # 一般来说，如果学习率调整的频率与 epoch 相关，每个 epoch 后都应调用一次 scheduler.step()；

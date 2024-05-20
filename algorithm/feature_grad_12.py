@@ -55,7 +55,7 @@ def get_features(image : np.ndarray, show_plt : bool = False, image_only = False
             for x in x_list:
                 # block_8_8 = np.sum(x)
                 # 改为亚采样，即获取 该区域的平均值
-                block_8_8 = np.mean(x)
+                block_8_8 = np.maximum(x)
                 features.append(block_8_8)
         
 
