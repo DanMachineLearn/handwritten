@@ -177,7 +177,7 @@ class HandWrittenDataSet(IterableDataset):
         return X, y
 
 
-def export(train = True, out_labels : list[str] = None, chars_only : list[str] = None):
+def export(train = True, out_labels : list[str] = None, chars_only : list[str] = None, max_char=100000):
     ''' 
     导出pot成bin文件
 
@@ -198,7 +198,7 @@ def export(train = True, out_labels : list[str] = None, chars_only : list[str] =
 
     import time
     start_time = time.time()
-    x_transforms = [ImgTo64Transform(channel_count=1)]
+    x_transforms = [ImgTo64Transform(channel_count=1, fast_handle=True)]
     y_transforms = []
     dataset = HandWrittenDataSet(
         pot_folders=pot_folder, 
@@ -221,6 +221,8 @@ def export(train = True, out_labels : list[str] = None, chars_only : list[str] =
             XX.append(X)
             yy.append(y)
             i += 1
+            if i >= max_char:
+                break;
             if i % 10000 == 0:
                 torch.save(XX, f'work/Bin/{file_index}_{"train" if train else "test"}.x.bin')
                 torch.save(yy, f'work/Bin/{file_index}_{"train" if train else "test"}.y.bin')
@@ -243,8 +245,8 @@ def export(train = True, out_labels : list[str] = None, chars_only : list[str] =
 def main():
     # chars_only=['一', '二', '邓', '登']
     chars_only=None
-    dataset = export(train=True, chars_only=chars_only)
-    export(train=False, out_labels=dataset.labels, chars_only=chars_only)
+    dataset = export(train=True, chars_only=chars_only, max_char=100000)
+    export(train=False, out_labels=dataset.labels, chars_only=chars_only, max_char=30000)
     pass
 
 if __name__ == '__main__':

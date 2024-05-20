@@ -6,7 +6,10 @@
 @Description:	训练手写识别模型（使用神经网络）
 ''' 
 
-from handwritten_model import HandWrittenModel
+from algorithm.channel1_to_gabor8_1 import Channel1ToGabor8_1
+from algorithm.to_tensor_transform import ToTensor
+from dataset.handwritten_img_bin_dataset import HandWrittenBinDataSet
+from models.handwritten_model import HandWrittenModel
 import torch
 import torch.optim as optim
 import torch.nn as nn
@@ -15,12 +18,11 @@ from torch.utils.data import DataLoader
 from alive_progress import alive_bar
 # from jpg_to_4_direction_transform import JpgToImgTransform
 # from img_to_grad_12_transform import ImgToGrad12Transform
-from handwritten_grad_12_csv_dataset import HandWrittenGrad12CsvDataSet
 from img_to_grad_12_transform import ImgToGrad12Transform
 
 def main():
     ## 数据集目录
-    DATA_SET_FOLDER = "work/data/HWDB_pot"
+    DATA_SET_FOLDER = "work"
     ## 模型目录
     MODEL_FOLDER = ""
 
@@ -42,18 +44,6 @@ def main():
     patience = 1
     optimizer = 1 # 使用adam，否则使用SDG
 
-    # 样品的数据来源
-    train_pot_folder = []
-    # train_pot_folder.append("D:\\Gitee\\python-learn\\work\\data\\HWDB_pot\\PotSimple")
-    # train_pot_folder.append("D:\\Gitee\\python-learn\\work\\data\\HWDB_pot\\PotTrain")
-    train_pot_folder.append(f"{DATA_SET_FOLDER}/PotTest")
-    test_pot_folder = []
-    # test_pot_folder.append("D:\\Gitee\\python-learn\\work\\data\\HWDB_pot\\PotTest")
-    test_pot_folder.append(f"{DATA_SET_FOLDER}/PotSimple")
-    # test_pot_folder.append("D:\\Gitee\\python-learn\\work\\data\\HWDB_pot\\PotSimpleTest")
-    # pot_folder.append("D:\\Gitee\\python-learn\\work\\data\\HWDB_pot\\PotTest")
-    # pot_folder.append("D:\\Gitee\\python-learn\\work\\data\\HWDB_pot\\PotTrain")
-
     import time
     start_time = time.time()
     ## 加载数据集
@@ -61,19 +51,23 @@ def main():
     # train_dataset = HandWrittenDataSet(pot_folders=train_pot_folder, transform=transform)
     # test_dataset = HandWrittenDataSet(pot_folders=test_pot_folder, outter_labels=train_dataset.labels, transform=transform)
 
-    dataset = HandWrittenGrad12CsvDataSet(csv_folders=[f"{DATA_SET_FOLDER}/Grad-12-csv"])
-    train_dataset = dataset.train_dataset
-    test_dataset = dataset.test_dataset
+    x_transforms = [Channel1ToGabor8_1(image_only=False), ToTensor(tensor_type=torch.float32)]
+    y_transforms = [ToTensor(tensor_type=torch.long)]
 
+    train_dataset = HandWrittenBinDataSet(train=True, bin_folder=f"{DATA_SET_FOLDER}/Bin",
+                                          x_transforms=x_transforms, y_transforms=y_transforms)
+    
+    test_dataset = HandWrittenBinDataSet(train=False, bin_folder=f"{DATA_SET_FOLDER}/Bin",
+                                          x_transforms=x_transforms, y_transforms=y_transforms)
 
-    train_loader = DataLoader(train_dataset, batch_size=batch_size, shuffle=True)
+    train_loader = DataLoader(train_dataset, batch_size=batch_size, shuffle=False)
     test_loader = DataLoader(test_dataset, batch_size=batch_size, shuffle=False)
     # print("打开pot文件数量: ", train_dataset.file_count + test_dataset.file_count)
-    print("打开csv文件数量: ", dataset.file_count)
+    print("打开csv文件数量: ", train_dataset.file_count)
     print("打开所有csv文件总耗时: ", '{:.2f} s'.format(time.time() - start_time))
 
     ## 创建模型
-    model = HandWrittenModel(input_features=train_dataset.feature_count, output_classes=len(train_dataset.labels))
+    model = HandWrittenModel(input_features=8 * 8 * 8, output_classes=len(train_dataset.labels))
 
 
     ## 创建学习器

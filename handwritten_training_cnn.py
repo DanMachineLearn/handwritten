@@ -12,6 +12,7 @@ import torch.nn as nn
 import numpy as np
 from torch.utils.data import DataLoader
 from alive_progress import alive_bar
+from dataset.handwritten_img_bin_dataset import HandWrittenBinDataSet
 from models.handwritten_model_cnn import HandWrittenCnnModel
 from dataset.handwritten_pot_dataset import HandWrittenDataSet
 from img_to_64_64_transform import ImgTo64Transform
@@ -84,19 +85,14 @@ def main():
     start_time = time.time()
     ## 加载数据集
 
-    x_transforms = [ImgTo64Transform(need_reshape=True), ToTensor(tensor_type=torch.float32)]
+    x_transforms = [ToTensor(tensor_type=torch.float32)]
     y_transforms = [ToTensor(tensor_type=torch.long)]
 
-    train_dataset = HandWrittenDataSet(
-        pot_folders=train_pot_folder, 
-        x_transforms=x_transforms,
-        y_transforms=y_transforms)
+    train_dataset = HandWrittenBinDataSet(train=True, bin_folder=f"{DATA_SET_FOLDER}/Bin",
+                                          x_transforms=x_transforms, y_transforms=y_transforms)
     
-    test_dataset = HandWrittenDataSet(
-        pot_folders=test_pot_folder, 
-        outter_labels=train_dataset.labels,
-        x_transforms=x_transforms,
-        y_transforms=y_transforms)
+    test_dataset = HandWrittenBinDataSet(train=False, bin_folder=f"{DATA_SET_FOLDER}/Bin",
+                                          x_transforms=x_transforms, y_transforms=y_transforms)
 
     shuffle = not isinstance(train_dataset, IterableDataset) 
     train_loader = DataLoader(train_dataset, batch_size=batch_size, shuffle=shuffle)
@@ -106,7 +102,7 @@ def main():
     print("打开所有文件总耗时: ", '{:.2f} s'.format(time.time() - start_time))
 
     ## 创建模型
-    model = HandWrittenCnnModel(input_shape=x_transforms[0].input_shape, output_classes=len(train_dataset.labels))
+    model = HandWrittenCnnModel(input_shape=(1, 64, 64), output_classes=len(train_dataset.labels))
     model = model.to(device)
 
 

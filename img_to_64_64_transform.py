@@ -12,6 +12,7 @@ import numpy as np
 import cv2 as cv
 import torch
 from algorithm.normalization_nonlinear_mean import remap
+from algorithm.normalization_memtion import remap as memtion_remap
 
 
 class ImgTo64Transform:
@@ -26,7 +27,7 @@ class ImgTo64Transform:
     '''
     pot数据转64*64的图像
     '''
-    def __init__(self, need_dilate : bool = True, need_reshape = False, show_plt = False, channel_count=1) -> None:
+    def __init__(self, need_dilate : bool = True, need_reshape = False, show_plt = False, channel_count=1, fast_handle = False) -> None:
         ''' 
         Parameters
         ----------
@@ -36,11 +37,14 @@ class ImgTo64Transform:
 
         channel_count=1 色彩通道数要么1，要么3
 
+        fast_handle=False 使用较快速的归一化算法（主要是因为自己的机器太慢）
+
         '''
         self.__need_dilate = need_dilate
         self.__need_reshape = need_reshape
         self.__show_plt = show_plt
         self.__channel_count = channel_count
+        self.__fast_handle = fast_handle
         pass
 
     def __call__(self, image : np.ndarray | str):
@@ -58,7 +62,10 @@ class ImgTo64Transform:
         if isinstance(image, str):
             image = cv.imread(image, cv.IMREAD_GRAYSCALE)
 
-        resized_image = remap(image=image, target_size=(64, 64), show_plt=False)
+        if self.__fast_handle:
+            resized_image = memtion_remap(image=image)
+        else:
+            resized_image = remap(image=image, target_size=(64, 64), show_plt=False)
 
         if self.__show_plt:
             cv.imshow("image", resized_image)
