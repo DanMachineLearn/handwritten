@@ -190,12 +190,15 @@ def main():
         scheduler.step(val_loss)
 
 
-    torch.save(model.state_dict(), f"{MODEL_FOLDER}/handwritten_nn.pth")
+    torch.save(model.state_dict(), f"{MODEL_FOLDER}/cnn_handwritten_nn.pth")
+    torch.save(train_dataset.labels, f"{MODEL_FOLDER}/cnn_labels.bin")
 
     all_classes = train_dataset.labels
     
     test_x = "deng.jpg"
-    for x_tran in x_transforms:
+    x_trains = [ImgTo64Transform(need_dilate=True, channel_count=1)]
+    x_trains.extend(x_transforms)
+    for x_tran in x_trains:
         test_x = x_tran(test_x)
     test_x = test_x.reshape((1, test_x.shape[0], test_x.shape[1], test_x.shape[2]))
     test_x = test_x.to(device)
