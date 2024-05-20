@@ -198,7 +198,8 @@ def export(train = True, out_labels : list[str] = None, chars_only : list[str] =
 
     import time
     start_time = time.time()
-    x_transforms = [ImgTo64Transform(channel_count=1, fast_handle=True)]
+    # x_transforms = [ImgTo64Transform(channel_count=1, fast_handle=True)]
+    x_transforms = []
     y_transforms = []
     dataset = HandWrittenDataSet(
         pot_folders=pot_folder, 
@@ -211,6 +212,8 @@ def export(train = True, out_labels : list[str] = None, chars_only : list[str] =
     yy = []
     file_index = 1
     torch.save(dataset.labels, f'work/Bin/labels.bin')
+    max_width = 0
+    max_height = 0
     with alive_bar(len(dataset)) as bar:
         for X, y in dataset:
             if chars_only is not None:
@@ -218,20 +221,28 @@ def export(train = True, out_labels : list[str] = None, chars_only : list[str] =
                 if not chars_only.__contains__(char):
                     bar()
                     continue
-            XX.append(X)
-            yy.append(y)
+            max_height = max(max_height, X.shape[0])
+            max_width = max(max_width, X.shape[1])
+            
+            cv.imshow('X', X)
+            cv.waitKey(-1)
+
+            # XX.append(X)
+            # yy.append(y)
             i += 1
             if i >= max_char:
                 break;
             if i % 10000 == 0:
-                torch.save(XX, f'work/Bin/{file_index}_{"train" if train else "test"}.x.bin')
-                torch.save(yy, f'work/Bin/{file_index}_{"train" if train else "test"}.y.bin')
-                XX = []
-                yy = []
-                file_index += 1
+                print("max_height", max_height)
+                print("max_width", max_width)
+                # torch.save(XX, f'work/Bin/{file_index}_{"train" if train else "test"}.x.bin')
+                # torch.save(yy, f'work/Bin/{file_index}_{"train" if train else "test"}.y.bin')
+                # XX = []
+                # yy = []
+                # file_index += 1
             bar()
-    torch.save(XX, f'work/Bin/{file_index}_{"train" if train else "test"}.x.bin')
-    torch.save(yy, f'work/Bin/{file_index}_{"train" if train else "test"}.y.bin')
+    # torch.save(XX, f'work/Bin/{file_index}_{"train" if train else "test"}.x.bin')
+    # torch.save(yy, f'work/Bin/{file_index}_{"train" if train else "test"}.y.bin')
     XX = []
     yy = []
 

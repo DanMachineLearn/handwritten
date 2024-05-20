@@ -16,32 +16,30 @@ import torch.nn as nn
 import numpy as np
 from torch.utils.data import DataLoader
 from alive_progress import alive_bar
-# from jpg_to_4_direction_transform import JpgToImgTransform
-# from img_to_grad_12_transform import ImgToGrad12Transform
 from img_to_grad_12_transform import ImgToGrad12Transform
+import os
+
+from utils.pot_downloader import PotDownloader
 
 def main():
+
     ## 数据集目录
-    DATA_SET_FOLDER = "work"
+    # /gemini/data-1
+    DATA_SET_FOLDER = os.environ["DATA_SET_FOLDER"] if os.environ.__contains__("DATA_SET_FOLDER") else "work"
     ## 模型目录
-    MODEL_FOLDER = ""
-
-
+    # /gemini/pretrain
+    MODEL_FOLDER = os.environ["MODEL_FOLDER"] if os.environ.__contains__("MODEL_FOLDER") else ""
     # 初始的学习率
-    init_ln=0.001
+    init_ln = float(os.environ["INIT_LN"] if os.environ.__contains__("INIT_LN") else 0.001)
     # 最低的学习率
-    min_ln = 0.0001
+    min_ln = float(os.environ["MIN_LN"] if os.environ.__contains__("MIN_LN") else 0.0001)
     # 每次训练的批次
-    # batch_size=1024
-    batch_size=512
-    # batch_size=4096
-    # batch_size=8192
-    # 测试组的数量
-    test_size = 20
+    batch_size = int(os.environ["BATCH_SIZE"] if os.environ.__contains__("BATCH_SIZE") else 512)
     # 循环训练的次数
-    num_epochs = 30
+    num_epochs = int(os.environ["NUM_EPOCHS"] if os.environ.__contains__("NUM_EPOCHS") else 1)
     # 前几次训练不修改学习率
-    patience = 1
+    patience = int(os.environ["PATIENCE"] if os.environ.__contains__("PATIENCE") else 1)
+
     optimizer = 1 # 使用adam，否则使用SDG
 
     import time
@@ -104,7 +102,7 @@ def main():
     i = 0
     for epoch in range(num_epochs):
 
-        print(f"训练循环第{epoch + 1}个:")
+        print(f"训练循环第{epoch + 1}/{num_epochs}个:")
         ## 用于输出训练的总进度
         model.train()  # 设置为训练模式
         train_loss = 0.0

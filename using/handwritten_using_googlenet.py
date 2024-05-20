@@ -27,57 +27,88 @@ from algorithm.to_one_hot_transform import ToOneHot
 from algorithm.to_tensor_transform import ToTensor
 from torch.utils.data import IterableDataset
 from torchvision.models.googlenet import GoogLeNetOutputs
-
+import time
 import os
+
+
+class ProductGooglenet:
+    '''
+    用于生产环境的模型
+    '''
+    @property
+    def model_name(self) -> str:
+        '''
+        模型的名字
+        '''
+        return self.__model_name
+    
+    def __init__(self) -> None:
+        ''' 
+        
+        Parameters
+        ----------
+        
+        
+        '''
+        ## 优先使用cuda
+        self.__device = (
+            "cuda"
+            if torch.cuda.is_available()
+            else "mps"
+            if torch.backends.mps.is_available()
+            else "cpu"
+        )
+        self.__model_name = 'GoogLeNet'
+        self.__all_classes = torch.load(os.path.join('pretrain', "googlenet_labels.bin"))
+        self.__model = GaborGoogLeNet(in_channels=9, num_classes=len(self.__all_classes))
+        self.__model = self.__model.to(self.__device)
+        self.__model.load_state_dict(torch.load(f"pretrain/googlenet_handwritten.pth", map_location='cpu' if self.__device == 'cpu' else None))
+        self.__model.eval()
+        self.__x_trainsforms = [
+            ImgTo64Transform(need_dilate=True, channel_count=1), 
+            Channel1ToGrad8_1(), 
+            ToTensor(tensor_type=torch.float32)]
+        
+        pass
+
+    def check(self, image : str | np.ndarray) -> list[str]:
+        ''' 监测图片，判断图片属于哪个字体
+        
+        Parameters
+        ----------
+        
+        
+        Returns
+        -------
+        list[str]
+        
+        '''
+        for x_tran in self.__x_trainsforms:
+            image = x_tran(image)
+        image = torch.unsqueeze(torch.Tensor(image), 0)
+        image = image.to(device=self.__device)
+        start_time = time.time()
+        max_labels = []
+        with torch.no_grad():
+            pred = self.__model(image)
+            max = pred[0].argmax(0).item()
+            predicted = self.__all_classes[max]
+            print(f'预测值: "{predicted}"')
+            max_list : np.ndarray = np.argsort(-pred[0])[0:9].numpy()
+            max_list = max_list.astype(np.int32)
+            max_list = max_list.tolist()
+            print("结果输出")
+            for l in max_list:
+                max_labels.append(self.__all_classes[l])
+                print(f"{l}\t{self.__all_classes[l]}")
+            print("总耗时", '{:.2f} s'.format(time.time() - start_time))
+        return max_labels
 
 def main():
 
-    ## 优先使用cuda
-    device = (
-        "cuda"
-        if torch.cuda.is_available()
-        else "mps"
-        if torch.backends.mps.is_available()
-        else "cpu"
-        )
-    print(f"using {device} device")
-
-
-    import time
-    start_time = time.time()
-    ## 加载数据集
-    MODEL_FOLDER = os.environ["MODEL_FOLDER"] if os.environ.__contains__("MODEL_FOLDER") else "pretrain"
-    DATA_SET_FOLDER = os.environ["DATA_SET_FOLDER"] if os.environ.__contains__("DATA_SET_FOLDER") else "work"
-
-    all_classes = torch.load(os.path.join(MODEL_FOLDER, "googlenet_labels.bin"))
-    model = GaborGoogLeNet(in_channels=9, num_classes=len(all_classes))
-    model = model.to(device)
-    model.load_state_dict(torch.load(f"{MODEL_FOLDER}/googlenet_handwritten.pth", map_location='cpu' if device == 'cpu' else None))
-
     test_x = "chang.png"
-    x_trainsforms = [ImgTo64Transform(need_dilate=True, channel_count=1, show_plt=True), Channel1ToGrad8_1(), ToTensor(tensor_type=torch.float32)]
-    for x_tran in x_trainsforms:
-        test_x = x_tran(test_x)
-    # test_x = test_x.reshape((1, test_x.shape[0], test_x.shape[1], test_x.shape[2]))
-    test_x = torch.unsqueeze(torch.Tensor(test_x), 0)
-    test_x.to(device=device)
-    ## 预测结果
-    model.eval()
-    start_time = time.time()
-    with torch.no_grad():
-        pred = model(test_x)
-        max = pred[0].argmax(0).item()
-        predicted = all_classes[max]
-        print(f'预测值: "{predicted}"')
-        max_list : np.ndarray = np.argsort(-pred[0])[0:9].numpy()
-        max_list = max_list.astype(np.int32)
-        max_list = max_list.tolist()
-        print("结果输出")
-        for l in max_list:
-            print(f"{l}\t{all_classes[l]}")
-        # print("结果输出2", min_list)
-        print("总耗时", '{:.2f} ms'.format(time.time() - start_time))
-
+    net = ProductGooglenet()
+    net.check(test_x)
 
 if __name__ == '__main__':
     main()

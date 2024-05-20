@@ -52,11 +52,13 @@ class Pot(object):
         '''
         return self.__current_pot
 
-    def __init__(self, pot_folder, chineses_only : bool=True):
+    def __init__(self, pot_folder, chineses_only : bool=True, using_nomaliztion=False):
         '''
         pot_folder 存放.pot 文件的文件夹
 
         chineses_only : bool=True 是否只获取中文字符
+
+        using_nomaliztion=False 归一化手写字体
         '''
         self.__pot_folder = pot_folder
         self.__pot_files = []
@@ -81,6 +83,7 @@ class Pot(object):
         self.__labels = sorted(set(temp_label)) 
         self.__char_count = char_count
         self.__pot_file_index = 0
+        self.__using_nomaliztion = using_nomaliztion
 
         # 当前已打开的文件
         self.__current_pot : BufferedReader = None
@@ -146,6 +149,8 @@ class Pot(object):
         pt_length = len(pts)
         stroke_start_tag = False
         for i in range(1, pt_length):
+            x, y = pts[i][0], pts[i][1]
+            last_x, last_y = pts[i - 1][0], pts[i - 1][1]
             if pts[i][0] == -1 and pts[i][1] == 0:
                 stroke_start_tag = True
                 continue
@@ -153,7 +158,14 @@ class Pot(object):
                 stroke_start_tag = False
                 continue
             x_delta, y_delta = -xmin+x_shift, -ymin+y_shift
-            cv.line(img, (pts[i-1][0]+x_delta, pts[i-1][1]+y_delta), (pts[i][0]+x_delta, pts[i][1]+y_delta), color=(0, 0, 0), thickness=5)
+
+            
+
+            cv.line(img, 
+                    (last_x + x_delta, last_y + y_delta), 
+                    (x + x_delta, y + y_delta), 
+                    color=(0, 0, 0), 
+                    thickness=5)
         return img
 
 
