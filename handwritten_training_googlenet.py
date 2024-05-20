@@ -198,7 +198,8 @@ def main():
         scheduler.step(val_loss)
 
 
-    torch.save(model.state_dict(), f"{MODEL_FOLDER}/handwritten_nn.pth")
+    torch.save(model.state_dict(), f"{MODEL_FOLDER}/googlenet_handwritten.pth")
+    torch.save(train_dataset.labels, f"{MODEL_FOLDER}/googlenet_labels.bin")
 
     all_classes = train_dataset.labels
     
