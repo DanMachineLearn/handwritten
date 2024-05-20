@@ -52,7 +52,8 @@ def upload_image():
             if m.model_name == model:
                 model_net = m
                 break;
-        labels = model_net.check("images/t.png")
+        labels, score = model_net.check("images/t.png")
+        
 
         # 模拟处理并返回标签
         return {"status": "success", "labels": labels}

@@ -9,6 +9,7 @@
 from algorithm.channel1_to_gabor8_1 import Channel1ToGabor8_1
 from algorithm.to_tensor_transform import ToTensor
 from dataset.handwritten_img_bin_dataset import HandWrittenBinDataSet
+from img_to_64_64_transform import ImgTo64Transform
 from models.handwritten_model import HandWrittenModel
 import torch
 import torch.optim as optim
@@ -40,6 +41,16 @@ def main():
     # 前几次训练不修改学习率
     patience = int(os.environ["PATIENCE"] if os.environ.__contains__("PATIENCE") else 1)
 
+    ## 优先使用cuda
+    device = (
+        "cuda"
+        if torch.cuda.is_available()
+        else "mps"
+        if torch.backends.mps.is_available()
+        else "cpu"
+        )
+    print(f"using {device} device")
+
     optimizer = 1 # 使用adam，否则使用SDG
 
     import time
@@ -66,7 +77,7 @@ def main():
 
     ## 创建模型
     model = HandWrittenModel(input_features=8 * 8 * 8, output_classes=len(train_dataset.labels))
-
+    model = model.to(device)
 
     ## 创建学习器
     if optimizer == 1:
@@ -110,6 +121,7 @@ def main():
         # train_size = int(len(train_dataset) / batch_size)
         with alive_bar(len(train_loader)) as bar:
             for inputs, real_y in train_loader:
+                inputs, real_y = inputs.to(device), real_y.to(device)
                 outputs = model(inputs)  # 前向传播
                 loss = criterion(outputs, real_y) 
                 train_loss += loss.item()
@@ -133,6 +145,7 @@ def main():
         num_batchs = len(test_loader)
         with torch.no_grad():
             for test_inputs, test_labels in test_loader:
+                test_inputs, test_labels = test_inputs.to(device), test_labels.to(device)
                 outputs = model(test_inputs)
                 val_loss = criterion(outputs, test_labels)
                 test_loss += val_loss.item()
@@ -155,16 +168,19 @@ def main():
     torch.save(model.state_dict(), f"{MODEL_FOLDER}/handwritten_nn.pth")
 
     all_classes = train_dataset.labels
-    jpg_transform = ImgToGrad12Transform()
-    import cv2
-    features = jpg_transform(cv2.imread("deng.jpg", cv2.IMREAD_GRAYSCALE))
-    features = features.reshape((1, -1))
+    test_x = "deng.jpg"
+    x_trains = [ImgTo64Transform(need_dilate=True, channel_count=1)]
+    x_trains.extend(x_transforms)
+    for x_tran in x_trains:
+        test_x = x_tran(test_x)
+    test_x = torch.unsqueeze(torch.Tensor(test_x), 0)
+    test_x = test_x.to(device)
 
     ## 预测结果
     model.eval()
     start_time = time.time()
     with torch.no_grad():
-        pred = model(features)
+        pred = model(test_x)
         max = pred[0].argmax(0).item()
         predicted = all_classes[max]
         print(f'预测值: "{predicted}"')

@@ -71,7 +71,7 @@ class ProductGooglenet:
         
         pass
 
-    def check(self, image : str | np.ndarray) -> list[str]:
+    def check(self, image : str | np.ndarray) -> tuple[list[str], list]:
         ''' 监测图片，判断图片属于哪个字体
         
         Parameters
@@ -95,18 +95,21 @@ class ProductGooglenet:
             predicted = self.__all_classes[max]
             print(f'预测值: "{predicted}"')
             max_list : np.ndarray = np.argsort(-pred[0])[0:9].numpy()
+            max_pred = pred[0][max_list]
             max_list = max_list.astype(np.int32)
             max_list = max_list.tolist()
             print("结果输出")
+            i = 0
             for l in max_list:
                 max_labels.append(self.__all_classes[l])
-                print(f"{l}\t{self.__all_classes[l]}")
+                print(f"{l}\t{self.__all_classes[l]}(置信度 {np.log(-max_pred[i])})")
+                i += 1
             print("总耗时", '{:.2f} s'.format(time.time() - start_time))
-        return max_labels
+        return max_labels, max_pred
 
 def main():
 
-    test_x = "chang.png"
+    test_x = "chang.jpg"
     net = ProductGooglenet()
     net.check(test_x)
 
