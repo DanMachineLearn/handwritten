@@ -12,6 +12,7 @@ import torch.nn as nn
 import numpy as np
 from torch.utils.data import DataLoader
 from alive_progress import alive_bar
+from algorithm.channel1_to_gabor8_1 import Channel1ToGabor8_1
 from dataset.handwritten_img_bin_dataset import HandWrittenBinDataSet
 from models.handwritten_model_cnn import HandWrittenCnnModel
 from dataset.handwritten_pot_dataset import HandWrittenDataSet
@@ -85,7 +86,7 @@ def main():
     start_time = time.time()
     ## 加载数据集
 
-    x_transforms = [ToTensor(tensor_type=torch.float32)]
+    x_transforms = [Channel1ToGabor8_1(), ToTensor(tensor_type=torch.float32)]
     y_transforms = [ToTensor(tensor_type=torch.long)]
 
     train_dataset = HandWrittenBinDataSet(train=True, bin_folder=f"{DATA_SET_FOLDER}/Bin",
@@ -102,7 +103,7 @@ def main():
     print("打开所有文件总耗时: ", '{:.2f} s'.format(time.time() - start_time))
 
     ## 创建模型
-    model = HandWrittenCnnModel(input_shape=(1, 64, 64), output_classes=len(train_dataset.labels))
+    model = HandWrittenCnnModel(input_shape=(9, 64, 64), output_classes=len(train_dataset.labels))
     model = model.to(device)
 
 
@@ -144,6 +145,7 @@ def main():
         ## 用于输出训练的总进度
         model.train()  # 设置为训练模式
         train_loss = 0.0
+        train_correct = 0.0
         # train_size = int(len(train_dataset) / batch_size)
         with alive_bar(len(train_loader)) as bar:
             for X, y in iter(train_loader):
@@ -151,6 +153,11 @@ def main():
                 test_output = model(X)  # 前向传播
                 loss = criterion(test_output, y) 
                 train_loss += loss.item()
+
+                predicted = torch.max(test_output.data,1)[1]
+                c = (predicted == y).type(torch.float).sum().item()
+                train_correct +=  c
+
                 loss.backward(retain_graph=False)  # 反向传播，不累计梯度
                 optimizer.step()
                 optimizer.zero_grad()  # 清空梯度
@@ -169,10 +176,12 @@ def main():
 
                 max_args = test_output.argmax(dim = 1)
                 correct += (test_output.argmax(1) == test_y).type(torch.float).sum().item()
+
+        train_correct /= len(train_loader.dataset)
         test_loss /= len(train_loader)
         correct /= len(train_loader.dataset)
         train_loss /= len(train_loader)
-        print(f"训练集: \n 平均 Loss: {train_loss:>8f}")
+        print(f"训练集: \n 准确率: {100 * train_correct:>01f}%, 平均 Loss: {train_loss:>8f}")
         print(f"测试集: \n 准确率: {100 * correct:>01f}%, 平均 Loss: {test_loss:>8f}\n")
 
         # 根据验证损失调整学习率
@@ -189,6 +198,7 @@ def main():
     for x_tran in x_transforms:
         test_x = x_tran(test_x)
     test_x = test_x.reshape((1, test_x.shape[0], test_x.shape[1], test_x.shape[2]))
+    test_x = test_x.to(device)
 
     ## 预测结果
     model.eval()
