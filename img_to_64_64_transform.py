@@ -62,6 +62,11 @@ class ImgTo64Transform:
         if isinstance(image, str):
             image = cv.imread(image, cv.IMREAD_GRAYSCALE)
 
+        if self.__need_dilate:
+            # 膨胀和腐蚀都是对于白色像素而言的，所以对于黑色的膨胀，则需要进行白色的腐蚀。
+            kernel = np.ones((5, 5), dtype=np.uint8) # 卷积核变为4*4
+            image = cv.erode(image, kernel, iterations=1)
+
         if self.__fast_handle:
             resized_image = memtion_remap(image=image)
         else:

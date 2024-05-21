@@ -102,6 +102,8 @@ def main():
     with alive_bar(len(dataset)) as bar:
         for X, y in dataset:
             count += 1
+            # cv2.imshow("X", X.reshape((64, 64)))
+            # cv2.waitKey(-1)
             E = calc_2D_Entropy(X)
             max_entropy = max(E, max_entropy)
             min_entropy = min(E, min_entropy)
@@ -129,6 +131,7 @@ def main():
             bar()
     print(f"计算了{count}个图像，最大值 为 {max_entropy}, 最小值 为 {min_entropy}, 平均值 为 {mean_entropy}")
     print("总耗时: ", '{:.2f} s'.format(time.time() - start_time))
+    # 计算了1622935个图像，最大值 为 0.9999993120692872, 最小值 为 0.21257895128187496, 平均值 为 0.7090148988206749
     pass
 
     pass

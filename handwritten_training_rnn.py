@@ -1,10 +1,11 @@
 # -*- encoding: utf-8 -*-
 '''
-@File		:	handwritten_training.py
-@Time		:	2024/05/06 16:18:50
+@File		:	handwritten_training_rnn.py
+@Time		:	2024/05/21 15:18:18
 @Author		:	dan
-@Description:	训练手写识别模型（使用卷积神经网络）
-''' 
+@Description:	根据笔画信息，训练RNN网络
+'''
+
 if __name__ == '__main__':
     import sys
     sys.path.append(".")
@@ -18,16 +19,18 @@ from algorithm.channel1_to_channel3 import Channel1ToChannel3
 from algorithm.channel1_to_gabor8_1 import Channel1ToGabor8_1
 from algorithm.channel1_to_grad8_1 import Channel1ToGrad8_1
 from dataset.handwritten_img_bin_dataset import HandWrittenBinDataSet
+from dataset.handwritten_pot_online_dataset import HandWrittenPotOnlineDataSet
 from models.HCCRGoogLeNetModel import GaborGoogLeNet
 from dataset.handwritten_pot_dataset import HandWrittenDataSet
 from img_to_64_64_transform import ImgTo64Transform
 from img_to_grad_12_transform import ImgToGrad12Transform
+from models.rnn_model import HandwrittenRNN
 from utils.pot_downloader import PotDownloader
 from algorithm.to_one_hot_transform import ToOneHot
 from algorithm.to_tensor_transform import ToTensor
 from torch.utils.data import IterableDataset
 from torchvision.models.googlenet import GoogLeNetOutputs
-
+from torch.nn.utils.rnn import pad_sequence
 import os
 
 def main():
@@ -93,26 +96,56 @@ def main():
     start_time = time.time()
     ## 加载数据集
 
-    # x_transforms = [Channel1ToChannel3(), ToTensor(tensor_type=torch.float32)]
-    # x_transforms = [Channel1ToGrad8_1(), ToTensor(tensor_type=torch.float32)]
-    x_transforms = [Channel1ToGabor8_1(), ToTensor(tensor_type=torch.float32)]
+    train_pot_folder = []
+    test_pot_folder = []
+    train_pot_folder.append(f"work/Pot1.0/Pot1.0Train.zip_out")
+    test_pot_folder.append(f"work/Pot1.0/Pot1.0Test.zip_out")
+    
+    
+    x_transforms = [ToTensor(tensor_type=torch.float32)]
     y_transforms = [ToTensor(tensor_type=torch.long)]
 
-    train_dataset = HandWrittenBinDataSet(train=True, bin_folder=f"{DATA_SET_FOLDER}/Bin",
-                                          x_transforms=x_transforms, y_transforms=y_transforms)
+    train_dataset = HandWrittenPotOnlineDataSet(
+        pot_folders=train_pot_folder,
+        x_transforms=x_transforms, y_transforms=y_transforms)
     
-    test_dataset = HandWrittenBinDataSet(train=False, bin_folder=f"{DATA_SET_FOLDER}/Bin",
-                                          x_transforms=x_transforms, y_transforms=y_transforms)
+    test_dataset = HandWrittenPotOnlineDataSet(
+        pot_folders=test_pot_folder,
+        outter_labels=train_dataset.labels,
+        x_transforms=x_transforms, y_transforms=y_transforms)
+    
+
+
+    def collate_fn(batch_data):  
+        """
+        自定义 batch 内各个数据条目的组织方式
+        :param data: 元组，第一个元素：句子序列数据，第二个元素：长度 第2维：句子标签
+        :return: 填充后的句子列表、实际长度的列表、以及label列表
+        """
+        # batch_data 为一个batch的数据组成的列表，data中某一元素的形式如下
+        # (tensor([1, 2, 3, 5]), 4, 0)
+        # 后续将填充好的序列数据输入到RNN模型时需要使用pack_padded_sequence函数
+        # pack_padded_sequence函数要求要按照序列的长度倒序排列
+        batch_data.sort(key=lambda xi: len(xi[0]), reverse=True)
+        data_length = [len(xi[0]) for xi in batch_data]
+        sent_seq = [xi[0] for xi in batch_data]
+        # sent_seq = torch.tensor(sent_seq, dtype=torch.float32)
+        label = [xi[1] for xi in batch_data]
+        padded_sent_seq = pad_sequence(sent_seq, batch_first=True, padding_value=0)
+        return padded_sent_seq, data_length, torch.tensor(label, dtype=torch.long)
+
+
+
 
     shuffle = not isinstance(train_dataset, IterableDataset) 
-    train_loader = DataLoader(train_dataset, batch_size=batch_size, shuffle=shuffle)
-    test_loader = DataLoader(test_dataset, batch_size=batch_size, shuffle=False)
+    train_loader = DataLoader(train_dataset, batch_size=batch_size, shuffle=shuffle, collate_fn=collate_fn)
+    test_loader = DataLoader(test_dataset, batch_size=batch_size, shuffle=False, collate_fn=collate_fn)
     # print("打开文件数量: ", train_dataset.file_count + test_dataset.file_count)
     print("打开文件数量: ", train_dataset.file_count + test_dataset.file_count)
     print("打开所有文件总耗时: ", '{:.2f} s'.format(time.time() - start_time))
 
     ## 创建模型
-    model = GaborGoogLeNet(in_channels=9, num_classes=len(train_dataset.labels))
+    model = HandwrittenRNN(output_size=len(train_dataset.labels))
     model = model.to(device)
 
 
@@ -157,10 +190,9 @@ def main():
         train_correct = 0.0
         # train_size = int(len(train_dataset) / batch_size)
         with alive_bar(len(train_loader)) as bar:
-            for X, y in iter(train_loader):
+            for X, length, y in iter(train_loader):
                 X, y = X.to(device), y.to(device)
-                test_output : GoogLeNetOutputs = model(X)  # 前向传播
-                # test_output = test_output.logits
+                test_output = model(X)  # 前向传播
                 loss = criterion(test_output, y) 
                 train_loss += loss.item()
 
@@ -177,7 +209,7 @@ def main():
         model.eval()  # 设置为评估模式
         test_loss, correct = 0, 0
         with torch.no_grad():
-            for test_X, test_y in iter(test_loader):
+            for test_X, length, test_y in iter(test_loader):
                 test_X, test_y = test_X.to(device), test_y.to(device)
                 test_output : torch.Tensor = model(test_X)
                 val_loss = criterion(test_output, test_y)
@@ -197,38 +229,8 @@ def main():
         # 如果学习率调整基于验证损失，通常在验证步骤后调用 scheduler.step(val_loss)。
         scheduler.step(val_loss)
 
-
-    torch.save(model.state_dict(), f"{MODEL_FOLDER}/googlenet_handwritten.pth")
-    torch.save(train_dataset.labels, f"{MODEL_FOLDER}/googlenet_labels.bin")
-
-    all_classes = train_dataset.labels
-    
-    test_x = "deng.jpg"
-    x_trainsforms = [ImgTo64Transform(need_dilate=True, channel_count=1), Channel1ToGrad8_1(), ToTensor(tensor_type=torch.float32)]
-    for x_tran in x_trainsforms:
-        test_x = x_tran(test_x)
-    # test_x = test_x.reshape((1, test_x.shape[0], test_x.shape[1], test_x.shape[2]))
-    test_x = torch.unsqueeze(torch.Tensor(test_x), 0)
-    test_x = test_x.to(device=device)
-    ## 预测结果
-    model.eval()
-    start_time = time.time()
-    with torch.no_grad():
-        pred = model(test_x)
-        max = pred[0].argmax(0).item()
-        predicted = all_classes[max]
-        print(f'预测值: "{predicted}"')
-        max_list : np.ndarray = np.argsort(-pred[0])
-        max_list = max_list[0:9] if device == 'cpu' else max_list.cpu()[0:9]
-        max_list = max_list.numpy()
-        max_list = max_list.astype(np.int32)
-        max_list = max_list.tolist()
-        print("结果输出")
-        for l in max_list:
-            print(f"{l}\t{all_classes[l]}")
-        # print("结果输出2", min_list)
-        print("总耗时", '{:.2f} ms'.format(time.time() - start_time))
-
+    torch.save(model.state_dict(), f"{MODEL_FOLDER}/rnn_handwritten.pth")
+    torch.save(train_dataset.labels, f"{MODEL_FOLDER}/rnn_labels.bin")
 
 if __name__ == '__main__':
     main()

@@ -1,10 +1,12 @@
 # -*- encoding: utf-8 -*-
 '''
-@File		:	pot.py
-@Time		:	2024/05/07 09:17:55
+@File		:	pot_online.py
+@Time		:	2024/05/21 14:27:50
 @Author		:	dan
-@Description:	解析 pot 文件的类
+@Description:	该类读取pot文件，保留笔迹的列表
 '''
+
+
 if __name__ == '__main__':
     import sys
     sys.path.append(".")
@@ -19,7 +21,7 @@ from torch.utils.data import IterableDataset
 from img_to_4_direction_transform import ImgTo4DirectionTransform
 
 
-class Pot(object):
+class PotOnline(object):
     """
     中科院字符文件的封装类
     """
@@ -145,129 +147,136 @@ class Pot(object):
         
 
 
-    def draw_stroke(self, img, pts : np.ndarray, xmin, ymin, x_shift, y_shift):
+    def draw_stroke(self, pts : np.ndarray, xmin, ymin, x_shift, y_shift):
         '''
-        根据pot里面的数据，将图像画上画板上
+        根据pot里面的提取成 x,y,s，，s为笔画对应的主键
         '''
         pt_length = len(pts)
         stroke_start_tag = False
         x_delta, y_delta = -xmin+x_shift, -ymin+y_shift
 
-        if self.__using_nomaliztion:
-            i = 1
-            # 移除不必要的点
-            while i < pt_length:
-                xi, yi = pts[i][0], pts[i][1]
-                xi_1, yi_1 = pts[i - 1][0], pts[i - 1][1]
 
-                if xi == -1 and yi == 0:
-                    stroke_start_tag = True
+        s = 0
+
+
+        i = 1
+        points = []
+        # 移除不必要的点
+        while i < pt_length:
+            xi, yi = pts[i][0], pts[i][1]
+            xi_1, yi_1 = pts[i - 1][0], pts[i - 1][1]
+            if xi == xi_1:
+                xi = xi_1 + 1
+
+            if xi == -1 and yi == 0:
+                stroke_start_tag = True
+                i += 1
+                continue
+            if stroke_start_tag:
+                i += 1
+                stroke_start_tag = False
+                continue
+            
+            # (xi_1 + x_delta, yi_1 + y_delta), 
+            # (xi + x_delta, yi + y_delta), 
+
+            ## 根据论文，简化图像 https://blog.csdn.net/qq_35337126/article/details/83787766
+            Tdist = np.sqrt((xi_1 - xi) ** 2 +  (yi_1 - yi) ** 2)
+            if Tdist < 5:
+                pts = np.delete(pts, i, 0)
+                pt_length -= 1
+                continue;
+            
+            if i > 1:
+                xi_2, yi_2 = pts[i - 2][0], pts[i - 2][1]
+                if xi_2 == -1 and yi_2 == 0:
                     i += 1
                     continue
-                if stroke_start_tag:
-                    i += 1
-                    stroke_start_tag = False
-                    continue
-                
-                # (xi_1 + x_delta, yi_1 + y_delta), 
-                # (xi + x_delta, yi + y_delta), 
-
-                ## 根据论文，简化图像 https://blog.csdn.net/qq_35337126/article/details/83787766
-                Tdist = np.var((xi_1 - xi, yi_1 - yi))
-                if Tdist < 5:
+                deltaXi_1 = xi_1 - xi_2
+                deltaXi = xi - xi_1
+                deltaYi_1 = yi_1 - yi_2
+                deltaYi = yi - yi_1
+                # RuntimeWarning: overflow encountered in scalar multiply
+                Tcos = deltaXi_1 * deltaXi + deltaYi * deltaYi_1
+                try:
+                    if np.sqrt(deltaXi_1 ** 2 + deltaYi_1 ** 2) == 0:
+                        print("np.sqrt(deltaXip1 ** 2 + deltaYip1 ** 2)")
+                    Tcos = Tcos / (np.sqrt(deltaXi_1 ** 2 + deltaYi_1 ** 2))
+                    Tcos = Tcos / (np.sqrt(deltaXi ** 2 + deltaYi ** 2))
+                except Exception as ex:
+                    print(ex)
+                if Tcos > 0.99:
+                    # pts.pop(i)
                     pts = np.delete(pts, i, 0)
                     pt_length -= 1
-                    continue;
-                
-                if i < pt_length - 1:
-                    xip1, yip1 = pts[i + 1][0], pts[i + 1][1]
-                    if xip1 == -1 and yip1 == 0:
-                        i += 1
-                        continue
-                    deltaXip1 = xip1 - xi
-                    deltaXi = xi - xi_1
-                    deltaYip1 = yip1 - yi
-                    deltaYi = yi - yi_1
-                    Tcos = deltaXip1 * deltaXi + deltaYi * deltaYip1
-                    Tcos = Tcos / (np.sqrt(deltaXip1 ** 2 + deltaYip1 ** 2))
-                    Tcos = Tcos / (np.sqrt(deltaXi ** 2 + deltaYi ** 2))
-                    if Tcos > 0.99:
-                        # pts.pop(i)
-                        pts = np.delete(pts, i, 0)
-                        pt_length -= 1
-                        continue
+                    continue
 
-                i += 1
+            i += 1
 
-            # sumPxL = 0
-            # sumPyL = 0
-            # sumLen = 0
-            # stroke_start_tag = False
-            # lastI = 1
-            # for i in range(1, len(pts)):
-
-            #     if pts[i][0] == -1 and pts[i][1] == 0:
-            #         stroke_start_tag = True
-            #         ux = sumPxL / sumLen
-            #         uy = sumPyL / sumLen
-            #         # sumPxL = 0
-            #         # sumPyL = 0
-            #         # sumLen = 0
-
-            #         sumDxL = 0
-            #         # sumLenL = 0
-            #         for j in range(lastI, i):
-            #             xj, yj = pts[j][0] + x_delta, pts[j][1] + y_delta
-            #             xj_1, yj_1 = pts[j - 1][0] + x_delta, pts[j - 1][1] + y_delta
-            #             lenL = np.sqrt((xj - xj_1) ** 2 + (yj - yj_1) ** 2)
-            #             dxL = 1/3 * lenL * (((xj - ux) ** 2) + ((xj_1 - ux) ** 2) + (xj_1 - ux) * (xj - ux))
-            #             sumDxL += dxL
-            #             # sumLenL += lenL
-            #         ox = np.sqrt(sumDxL / sumLen)
-
-            #         for j in range(lastI - 1, i):
-            #             xj, yj = pts[j][0] + x_delta, pts[j][1] + y_delta
-            #             x_new = (xj - ux) / ox
-            #             y_new = (yj - uy) / ox
-            #             pts[j][0], pts[j][1] = x_new, y_new
-                    
-            #         i += 1
-            #         lastI = i
-            #         continue
-            #     if stroke_start_tag:
-            #         stroke_start_tag = False
-            #         continue
-                
-            #     xi, yi = pts[i][0] + x_delta, pts[i][1] + y_delta
-            #     xi_1, yi_1 = pts[i - 1][0] + x_delta, pts[i - 1][1] + y_delta
-
-            #     lenL = np.sqrt((xi - xi_1) ** 2 + (yi - yi_1) ** 2)
-            #     sumPxL += 1/2 * (xi + xi_1) * lenL
-            #     sumPyL += 1/2 * (yi + yi_1) * lenL
-            #     sumLen += lenL
-
-
-            
-
+        sumPxL = 0
+        sumPyL = 0
+        sumLen = 0
         stroke_start_tag = False
+        lastI = 1
         for i in range(1, len(pts)):
 
             if pts[i][0] == -1 and pts[i][1] == 0:
                 stroke_start_tag = True
+                if sumLen == 0:
+                    # print(sumLen)
+                    continue;
+                ux = sumPxL / sumLen
+                uy = sumPyL / sumLen
+
+                sumDxL = 0
+                for j in range(lastI, i):
+                    xj, yj = pts[j][0] + x_delta, pts[j][1] + y_delta
+                    xj_1, yj_1 = pts[j - 1][0] + x_delta, pts[j - 1][1] + y_delta
+                    if xj == xj_1:
+                        xj = xj_1 + 1
+                    lenL = np.sqrt((xj - xj_1) ** 2 + (yj - yj_1) ** 2)
+                    dxL = 1/3 * lenL * (((xj - ux) ** 2) + ((xj_1 - ux) ** 2) + (xj_1 - ux) * (xj - ux))
+                    sumDxL += dxL
+                ox = np.sqrt(sumDxL / sumLen)
+                if ox == 0:
+                    print(ox)
+
+                for j in range(lastI - 1, i):
+                    xj, yj = pts[j][0] + x_delta, pts[j][1] + y_delta
+                    x_new = (xj - ux) / ox
+                    y_new = (yj - uy) / ox
+                    points.append((x_new, y_new, s))
+                
+                sumPxL = 0
+                sumPyL = 0
+                sumLen = 0
+                i += 1
+                lastI = i
+                s += 1
                 continue
             if stroke_start_tag:
                 stroke_start_tag = False
+                i += 1
                 continue
             
             xi, yi = pts[i][0] + x_delta, pts[i][1] + y_delta
             xi_1, yi_1 = pts[i - 1][0] + x_delta, pts[i - 1][1] + y_delta
-            cv.line(img, 
-                    (xi_1, yi_1), 
-                    (xi, yi), 
-                    color=(0, 0, 0), 
-                    thickness=5)
-            cv.circle(img, (xi_1 + x_delta, yi_1 + y_delta), 1, (127, 127, 127), 3, cv.FILLED)
-        return img
+            if xi == xi_1:
+                xi = xi_1 + 1
+
+            lenL = np.sqrt((xi - xi_1) ** 2 + (yi - yi_1) ** 2)
+            sumPxL += 1/2 * (xi + xi_1) * lenL
+            sumPyL += 1/2 * (yi + yi_1) * lenL
+            sumLen += lenL
+
+
+
+        L = []
+        for i in range(1, len(points)):
+            x, y, s = points[i]
+            last_x, last_y, last_s = points[i - 1]
+            L.append((x, y, x - last_x, y - last_y, 1 if s == last_s else 0, 0 if s == last_s else 1))
+        return np.array(L)
 
 
 
@@ -316,9 +325,8 @@ class Pot(object):
             if not self.is_chinese(tagcode):
                 return self.next_chat_from_buffer(file_buffer)
 
-        canva = np.ones((ymax-ymin+2*y_shift, xmax-xmin+2*x_shift), dtype=np.uint8)*255
         pts = np.array(traj)
-        img = self.draw_stroke(canva, pts, xmin, ymin, x_shift, y_shift)
+        img = self.draw_stroke(pts, xmin, ymin, x_shift, y_shift)
         
         return img, tagcode
 
@@ -380,11 +388,11 @@ class Pot(object):
 
 def main():
     pot_folder = "work/Pot1.0/Pot1.0Test.zip_out"
-    p = Pot(pot_folder=pot_folder, using_nomaliztion=True)
+    p = PotOnline(pot_folder=pot_folder, using_nomaliztion=True)
     for img, tagcode in p.get_data_iter():
-        cv.imshow("img", img)
-        cv.waitKey(-1)
-    pass
+        # cv.imshow("img", img)
+        # cv.waitKey(-1)
+        pass
 
 if __name__ == '__main__':
 

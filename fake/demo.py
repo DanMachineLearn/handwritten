@@ -6,6 +6,14 @@ import matplotlib.pyplot as plt
 image_path = 'deng.jpg'  # 替换为你的图像路径
 image = cv2.imread(image_path, cv2.IMREAD_GRAYSCALE)
 
+
+print(np.sqrt((3) ** 2 +  (4) ** 2))
+
+deltaXip1 = 3
+deltaYip1 = 4
+l = np.sqrt(deltaXip1 ** 2 + deltaYip1 ** 2)
+print(l)
+
 # 二值化图像
 _, binary_image = cv2.threshold(image, 127, 255, cv2.THRESH_BINARY)
 
