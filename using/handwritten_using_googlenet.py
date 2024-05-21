@@ -109,7 +109,7 @@ class ProductGooglenet:
 
 def main():
 
-    test_x = "chang.jpg"
+    test_x = "deng.jpg"
     net = ProductGooglenet()
     net.check(test_x)
 

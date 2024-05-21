@@ -218,7 +218,8 @@ def main():
         max = pred[0].argmax(0).item()
         predicted = all_classes[max]
         print(f'预测值: "{predicted}"')
-        max_list : np.ndarray = np.argsort(-pred[0])[0:9].numpy()
+        max_list : np.ndarray = np.argsort(-pred[0])[0:9]
+        max_list = max_list.numpy() if device == 'cpu' else max_list.cpu().numpy()
         max_list = max_list.astype(np.int32)
         max_list = max_list.tolist()
         print("结果输出")

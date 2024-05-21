@@ -13,6 +13,7 @@ import cv2
 import matplotlib.pyplot as plt
 import numpy as np
 import math
+from scipy.stats import entropy
 
 from dataset.handwritten_img_bin_dataset import HandWrittenBinDataSet
 
@@ -63,16 +64,18 @@ def calc_2D_Entropy(img : np.ndarray):
 
 
 
-    # 计算图像的直方图
-    hist, _ = np.histogram(img, bins=256, range=[0, 256])
-    # 计算直方图的概率分布
-    prob = hist / (img.shape[0] * img.shape[1])
-    # 计算信息熵
-    entropy = -np.sum(prob * np.log2(prob + np.finfo(float).eps))
-    if entropy < 0:
-        print(entropy)
+    # 计算每个灰度值的直方图
+    histogram, bin_edges = np.histogram(img, bins=256, range=(0, 255))
+    
+    # 计算每个灰度值的概率
+    probability_distribution = histogram / np.sum(histogram)
+    
+    # 计算图像的熵
+    img_entropy = entropy(probability_distribution, base=2)
+    if img_entropy < 0:
+        print(img_entropy)
     # print('Image entropy:', entropy)
-    return entropy
+    return img_entropy
 
 
 def main():

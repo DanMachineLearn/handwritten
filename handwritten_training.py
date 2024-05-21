@@ -72,8 +72,8 @@ def main():
     train_loader = DataLoader(train_dataset, batch_size=batch_size, shuffle=False)
     test_loader = DataLoader(test_dataset, batch_size=batch_size, shuffle=False)
     # print("打开pot文件数量: ", train_dataset.file_count + test_dataset.file_count)
-    print("打开csv文件数量: ", train_dataset.file_count)
-    print("打开所有csv文件总耗时: ", '{:.2f} s'.format(time.time() - start_time))
+    print("打开文件数量: ", train_dataset.file_count)
+    print("打开文件总耗时: ", '{:.2f} s'.format(time.time() - start_time))
 
     ## 创建模型
     model = HandWrittenModel(input_features=8 * 8 * 8, output_classes=len(train_dataset.labels))
@@ -184,7 +184,8 @@ def main():
         max = pred[0].argmax(0).item()
         predicted = all_classes[max]
         print(f'预测值: "{predicted}"')
-        max_list : np.ndarray = np.argsort(-pred[0])[0:9].numpy()
+        max_list : np.ndarray = np.argsort(-pred[0])[0:9]
+        max_list = max_list.numpy() if device == 'cpu' else max_list.cpu().numpy()
         max_list = max_list.astype(np.int32)
         max_list = max_list.tolist()
         print("结果输出")
