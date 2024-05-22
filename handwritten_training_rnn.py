@@ -52,7 +52,7 @@ def main():
     # /gemini/pretrain
     MODEL_FOLDER = os.environ["MODEL_FOLDER"] if os.environ.__contains__("MODEL_FOLDER") else ""
     # 初始的学习率
-    init_ln = float(os.environ["INIT_LN"] if os.environ.__contains__("INIT_LN") else 0.001)
+    init_ln = float(os.environ["INIT_LN"] if os.environ.__contains__("INIT_LN") else 0.01)
     # 最低的学习率
     min_ln = float(os.environ["MIN_LN"] if os.environ.__contains__("MIN_LN") else 0.00001)
     # 每次训练的批次
