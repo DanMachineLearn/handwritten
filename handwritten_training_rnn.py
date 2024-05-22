@@ -80,18 +80,6 @@ def main():
 
     optimizer = 1 # 使用adam，否则使用SDG
 
-    # 样品的数据来源
-    train_pot_folder = []
-    # train_pot_folder.append(f"{DATA_SET_FOLDER}/PotSimple")
-    train_pot_folder.append(f"{DATA_SET_FOLDER}/{train_folder}")
-    # train_pot_folder.append(f"{DATA_SET_FOLDER}/PotTest")
-    test_pot_folder = []
-    test_pot_folder.append(f"{DATA_SET_FOLDER}/{test_folder}")
-    # test_pot_folder.append(f"{DATA_SET_FOLDER}/PotSimple")
-    # test_pot_folder.append(f"{DATA_SET_FOLDER}/PotSimpleTest")
-    # pot_folder.append(f"{DATA_SET_FOLDER}/PotTest")
-    # pot_folder.append(f"{DATA_SET_FOLDER}/PotTrain")
-
     import time
     start_time = time.time()
     ## 加载数据集
@@ -100,6 +88,12 @@ def main():
     test_pot_folder = []
     train_pot_folder.append(f"work/Pot1.0/Pot1.0Train.zip_out")
     test_pot_folder.append(f"work/Pot1.0/Pot1.0Test.zip_out")
+    train_pot_folder.append(f"work/Pot1.1/Pot1.1Train.zip_out")
+    test_pot_folder.append(f"work/Pot1.1/Pot1.1Test.zip_out")
+    train_pot_folder.append(f"work/Pot1.2/Pot1.2Train.zip_out")
+    test_pot_folder.append(f"work/Pot1.2/Pot1.2Test.zip_out")
+    # train_pot_folder.append(f"work/Pot1.0/Simple/Train")
+    # test_pot_folder.append(f"work/Pot1.0/Simple/Test")
     
     
     x_transforms = [ToTensor(tensor_type=torch.float32)]
