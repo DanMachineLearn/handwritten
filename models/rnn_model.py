@@ -10,21 +10,27 @@ import torch
 import torch.nn as nn
 import torch.optim as optim
 
+
 class HandwrittenRNN(nn.Module):
-    def __init__(self, output_size, input_size = 6):
+    def __init__(self, output_size, input_size=6, hidden_size=500, num_layers=1):
         super(HandwrittenRNN, self).__init__()
-        self.hidden_size = 500
-        self.num_layers = 1
-        self.rnn = nn.LSTM(input_size=input_size, hidden_size=500, num_layers=1, batch_first=True)
+        self.hidden_size = hidden_size
+        self.num_layers = num_layers
+
+        # 定义LSTM层
+        self.lstm = nn.LSTM(input_size, hidden_size, num_layers, batch_first=True)
         self.fc1 = nn.Linear(in_features=500, out_features=200)
         self.relu1 = nn.ReLU()
         self.fc2 = nn.Linear(in_features=200, out_features=output_size)
 
     def forward(self, x):
-        print(x.size(0))
+        # 初始化隐藏状态和细胞状态
         h0 = torch.zeros(self.num_layers, x.size(0), self.hidden_size).to(x.device)
-        # h0 = torch.zeros(self.num_layers, batch_size,self.hidden_size)   # 输入数据
-        out, _ = self.rnn(x, h0)
+        c0 = torch.zeros(self.num_layers, x.size(0), self.hidden_size).to(x.device)
+
+        # 前向传播LSTM
+        out, _ = self.lstm(x, (h0, c0))
+        # 只使用最后一个时间步的输出
         out = self.fc1(out[:, -1, :])
         out = self.relu1(out)
         out = self.fc2(out)
