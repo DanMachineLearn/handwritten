@@ -18,7 +18,7 @@ class HandwrittenRNN(nn.Module):
         self.num_layers = num_layers
 
         # 定义LSTM层
-        self.lstm = nn.LSTM(input_size, hidden_size, num_layers, batch_first=True)
+        self.lstm = nn.LSTM(input_size, hidden_size, num_layers, batch_first=True, dropout=0.5)
         self.fc1 = nn.Linear(in_features=hidden_size, out_features=200)
         self.relu1 = nn.ReLU()
         self.fc2 = nn.Linear(in_features=200, out_features=output_size)

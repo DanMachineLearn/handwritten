@@ -37,7 +37,7 @@ def main():
     # 每次训练的批次
     batch_size = int(os.environ["BATCH_SIZE"] if os.environ.__contains__("BATCH_SIZE") else 512)
     # 循环训练的次数
-    num_epochs = int(os.environ["NUM_EPOCHS"] if os.environ.__contains__("NUM_EPOCHS") else 1)
+    num_epochs = int(os.environ["NUM_EPOCHS"] if os.environ.__contains__("NUM_EPOCHS") else 5)
     # 前几次训练不修改学习率
     patience = int(os.environ["PATIENCE"] if os.environ.__contains__("PATIENCE") else 1)
 
