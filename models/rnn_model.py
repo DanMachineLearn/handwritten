@@ -11,48 +11,42 @@ import torch.nn as nn
 import torch.optim as optim
 
 class HandwrittenRNN(nn.Module):
-    def __init__(self, output_size, input_size = 6, hidden_size = 1024, num_layers=1):
+    def __init__(self, output_size, input_size = 6):
         super(HandwrittenRNN, self).__init__()
-        self.hidden_size = hidden_size
-        self.num_layers = num_layers
-
-        # 定义RNN层
-        self.rnn = nn.RNN(input_size, hidden_size, num_layers, batch_first=True)
-        # 定义全连接层
-        self.fc = nn.Linear(hidden_size, output_size)
+        self.hidden_size = 500
+        self.num_layers = 1
+        self.rnn = nn.LSTM(input_size=input_size, hidden_size=500, num_layers=1, batch_first=True)
+        self.fc1 = nn.Linear(in_features=500, out_features=200)
+        self.relu1 = nn.ReLU()
+        self.fc2 = nn.Linear(in_features=200, out_features=output_size)
 
     def forward(self, x):
-        # 初始化隐藏状态
+        print(x.size(0))
         h0 = torch.zeros(self.num_layers, x.size(0), self.hidden_size).to(x.device)
-        
-        # 通过RNN层
+        # h0 = torch.zeros(self.num_layers, batch_size,self.hidden_size)   # 输入数据
         out, _ = self.rnn(x, h0)
-        
-        # 取最后一个时间步的输出
-        out = self.fc(out[:, -1, :])
+        out = self.fc1(out[:, -1, :])
+        out = self.relu1(out)
+        out = self.fc2(out)
         return out
-
-
 
 def main():
     # 定义超参数
     input_size = 6   # 输入特征数
-    hidden_size = 20  # 隐藏层特征数
     output_size = 1024   # 输出特征数
-    num_layers = 2    # RNN层数
     learning_rate = 0.001
     num_epochs = 100
 
     
     # 创建模型
-    model = HandwrittenRNN(input_size=input_size, hidden_size=hidden_size, output_size=output_size, num_layers=num_layers)
+    model = HandwrittenRNN(output_size=output_size)
     criterion = nn.MSELoss()
     optimizer = optim.Adam(model.parameters(), lr=learning_rate)
 
     # 示例输入数据
     # 形状：(批量大小, 序列长度, 输入特征数)
     x_train = torch.randn(32, 5, input_size)  # 批量大小为32，序列长度为5
-    y_train = torch.randn(32, output_size, dtype=torch.long)    # 批量大小为32
+    y_train = torch.randn(32, output_size)    # 批量大小为32
 
     # 训练模型
     for epoch in range(num_epochs):

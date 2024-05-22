@@ -95,7 +95,7 @@ def main():
 
     # x_transforms = [Channel1ToChannel3(), ToTensor(tensor_type=torch.float32)]
     # x_transforms = [Channel1ToGrad8_1(), ToTensor(tensor_type=torch.float32)]
-    x_transforms = [Channel1ToGabor8_1(), ToTensor(tensor_type=torch.float32)]
+    x_transforms = [Channel1ToGabor8_1(image_only=True), ToTensor(tensor_type=torch.float32)]
     y_transforms = [ToTensor(tensor_type=torch.long)]
 
     train_dataset = HandWrittenBinDataSet(train=True, bin_folder=f"{DATA_SET_FOLDER}/Bin",
@@ -142,7 +142,7 @@ def main():
     # criterion = nn.NLLLoss()
 
     # 使用 ReduceLROnPlateau 调度器
-    scheduler = optim.lr_scheduler.ReduceLROnPlateau(optimizer, 'min', patience=patience, factor=0.5, min_lr=min_ln)
+    scheduler = optim.lr_scheduler.ReduceLROnPlateau(optimizer, 'min', patience=patience, factor=0.5)
     # scheduler = optim.lr_scheduler.ReduceLROnPlateau(optimizer, 'min', factor=0.5)
     # scheduler = optim.lr_scheduler.StepLR(optimizer=optimizer, gamma=0.5)
 

@@ -175,7 +175,7 @@ def main():
     # criterion = nn.NLLLoss()
 
     # 使用 ReduceLROnPlateau 调度器
-    scheduler = optim.lr_scheduler.ReduceLROnPlateau(optimizer, 'min', patience=patience, factor=0.5, min_lr=min_ln)
+    scheduler = optim.lr_scheduler.ReduceLROnPlateau(optimizer, 'min', patience=patience, factor=0.3)
     # scheduler = optim.lr_scheduler.ReduceLROnPlateau(optimizer, 'min', factor=0.5)
     # scheduler = optim.lr_scheduler.StepLR(optimizer=optimizer, gamma=0.5)
 

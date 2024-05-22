@@ -50,7 +50,7 @@ def main():
     # 每次训练的批次
     batch_size = int(os.environ["BATCH_SIZE"] if os.environ.__contains__("BATCH_SIZE") else 512)
     # 循环训练的次数
-    num_epochs = int(os.environ["NUM_EPOCHS"] if os.environ.__contains__("NUM_EPOCHS") else 1)
+    num_epochs = int(os.environ["NUM_EPOCHS"] if os.environ.__contains__("NUM_EPOCHS") else 10)
     # 前几次训练不修改学习率
     patience = int(os.environ["PATIENCE"] if os.environ.__contains__("PATIENCE") else 1)
     # 训练数据集的文件夹
@@ -133,7 +133,7 @@ def main():
     # criterion = nn.NLLLoss()
 
     # 使用 ReduceLROnPlateau 调度器
-    scheduler = optim.lr_scheduler.ReduceLROnPlateau(optimizer, 'min', patience=patience, factor=0.5, min_lr=min_ln)
+    scheduler = optim.lr_scheduler.ReduceLROnPlateau(optimizer, 'min', patience=patience, factor=0.3)
     # scheduler = optim.lr_scheduler.ReduceLROnPlateau(optimizer, 'min', factor=0.5)
     # scheduler = optim.lr_scheduler.StepLR(optimizer=optimizer, gamma=0.5)
 
@@ -178,9 +178,10 @@ def main():
                 correct += (test_output.argmax(1) == test_y).type(torch.float).sum().item()
 
         train_correct /= len(train_loader.dataset)
+        train_loss /= len(train_loader)
+
         test_loss /= len(test_loader)
         correct /= len(test_loader.dataset)
-        train_loss /= len(train_loader)
         print(f"训练集: \n 准确率: {100 * train_correct:>01f}%, 平均 Loss: {train_loss:>8f}")
         print(f"测试集: \n 准确率: {100 * correct:>01f}%, 平均 Loss: {test_loss:>8f}\n")
 
