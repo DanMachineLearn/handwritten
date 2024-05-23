@@ -113,6 +113,9 @@ def main():
 
     ## 创建模型
     model = GaborGoogLeNet(in_channels=9, num_classes=len(train_dataset.labels))
+    if os.path.isfile(f"{MODEL_FOLDER}/googlenet_handwritten.pth"):
+        model.load_state_dict(torch.load(f"{MODEL_FOLDER}/googlenet_handwritten.pth", map_location='cpu' if device == 'cpu' else None))
+
     model = model.to(device)
 
 
