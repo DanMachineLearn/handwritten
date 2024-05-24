@@ -81,11 +81,13 @@ class GaborGoogLeNet(nn.Module):
         #                                   init_weights=True, 
         #                                   num_classes=num_classes)
         self.googlenet = GoogLeNet(in_channels=in_channels, num_classes=num_classes)
+        # self.softmax = nn.Softmax(dim=1)
         # self.googlenet.fc = nn.Linear(1024, num_classes)
 
     def forward(self, x):
         # x = self.gabor_layer(x)
         x = self.googlenet(x)
+        # x = self.softmax(x)
         return x
 
 

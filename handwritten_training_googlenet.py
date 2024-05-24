@@ -56,7 +56,7 @@ def main():
     # 每次训练的批次
     batch_size = int(os.environ["BATCH_SIZE"] if os.environ.__contains__("BATCH_SIZE") else 512)
     # 循环训练的次数
-    num_epochs = int(os.environ["NUM_EPOCHS"] if os.environ.__contains__("NUM_EPOCHS") else 1)
+    num_epochs = int(os.environ["NUM_EPOCHS"] if os.environ.__contains__("NUM_EPOCHS") else 5)
     # 前几次训练不修改学习率
     patience = int(os.environ["PATIENCE"] if os.environ.__contains__("PATIENCE") else 1)
     # 训练数据集的文件夹
@@ -194,6 +194,10 @@ def main():
             for test_X, test_y in iter(test_loader):
                 test_X, test_y = test_X.to(device), test_y.to(device)
                 test_output : torch.Tensor = model(test_X)
+
+
+                 # 计算概率值
+                probabilities = torch.softmax(test_output, dim=1)
                 val_loss = criterion(test_output, test_y)
                 test_loss += val_loss.item()
 
@@ -233,23 +237,19 @@ def main():
     ## 预测结果
     model.eval()
     start_time = time.time()
+    all_probs = []
     with torch.no_grad():
         pred = model(test_x)
         max = pred[0].argmax(0).item()
         predicted = all_classes[max]
         print(f'预测值: "{predicted}"')
-        pred = pred if device == 'cpu' else pred.cpu()
-        max_list : np.ndarray = np.argsort(-pred[0])
-        max_list = max_list[0:9] if device == 'cpu' else max_list.cpu()[0:9]
-        max_list = max_list.numpy()
-        max_list = max_list.astype(np.int32)
-        max_list = max_list.tolist()
-        print("结果输出")
-        for l in max_list:
-            print(f"{l}\t{all_classes[l]}")
-        # print("结果输出2", min_list)
-        print("总耗时", '{:.2f} ms'.format(time.time() - start_time))
+        
+            # 计算概率值
+        probabilities = torch.softmax(test_output, dim=1)
+        all_probs.append(probabilities)
 
+    all_probs = torch.cat(all_probs, dim=0)
+    print(f"前五值: {all_probs[:5]}")
 
 if __name__ == '__main__':
     main()
