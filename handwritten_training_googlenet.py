@@ -22,6 +22,7 @@ from models.HCCRGoogLeNetModel import GaborGoogLeNet
 from dataset.handwritten_pot_dataset import HandWrittenDataSet
 from img_to_64_64_transform import ImgTo64Transform
 from img_to_grad_12_transform import ImgToGrad12Transform
+from utils import matplot_tools
 from utils.pot_downloader import PotDownloader
 from algorithm.to_one_hot_transform import ToOneHot
 from algorithm.to_tensor_transform import ToTensor
@@ -55,7 +56,7 @@ def main():
     # 每次训练的批次
     batch_size = int(os.environ["BATCH_SIZE"] if os.environ.__contains__("BATCH_SIZE") else 512)
     # 循环训练的次数
-    num_epochs = int(os.environ["NUM_EPOCHS"] if os.environ.__contains__("NUM_EPOCHS") else 15)
+    num_epochs = int(os.environ["NUM_EPOCHS"] if os.environ.__contains__("NUM_EPOCHS") else 1)
     # 前几次训练不修改学习率
     patience = int(os.environ["PATIENCE"] if os.environ.__contains__("PATIENCE") else 1)
     # 训练数据集的文件夹
@@ -151,6 +152,10 @@ def main():
 
     # 训练模型
     i = 0
+    test_loss_list = []
+    test_correct_list = []
+    train_loss_list = []
+    train_correct_list = []
     for epoch in range(num_epochs):
 
         print(f"训练循环第{epoch + 1}/{num_epochs}个:")
@@ -158,9 +163,15 @@ def main():
         model.train()  # 设置为训练模式
         train_loss = 0.0
         train_correct = 0.0
+        import cv2
         # train_size = int(len(train_dataset) / batch_size)
         with alive_bar(len(train_loader)) as bar:
             for X, y in iter(train_loader):
+                X : torch.Tensor = X
+                # cv2.imshow("X", X.numpy()[0][0])
+                # q = cv2.waitKey(-1)
+                # if q == ord('q'):
+                #     sys.exit(0)
                 X, y = X.to(device), y.to(device)
                 test_output : GoogLeNetOutputs = model(X)  # 前向传播
                 # test_output = test_output.logits
@@ -195,6 +206,11 @@ def main():
         print(f"训练集: \n 准确率: {100 * train_correct:>01f}%, 平均 Loss: {train_loss:>8f}")
         print(f"测试集: \n 准确率: {100 * correct:>01f}%, 平均 Loss: {test_loss:>8f}\n")
 
+        test_loss_list.append(test_loss)
+        train_correct_list.append(train_correct)
+        test_correct_list.append(correct)
+        train_loss_list.append(train_loss)
+
         # 根据验证损失调整学习率
         # 一般来说，如果学习率调整的频率与 epoch 相关，每个 epoch 后都应调用一次 scheduler.step()；
         # 如果学习率调整基于验证损失，通常在验证步骤后调用 scheduler.step(val_loss)。
@@ -203,6 +219,7 @@ def main():
 
     torch.save(model.state_dict(), f"{MODEL_FOLDER}/googlenet_handwritten.pth")
     torch.save(train_dataset.labels, f"{MODEL_FOLDER}/googlenet_labels.bin")
+    matplot_tools.draw_plot(test_loss_list, test_correct_list, train_loss_list, train_correct_list, "googlenet_train_log.jpg")
 
     all_classes = train_dataset.labels
     

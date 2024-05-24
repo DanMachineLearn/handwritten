@@ -29,6 +29,7 @@ from torch.utils.data import IterableDataset
 from torchvision.models.googlenet import GoogLeNetOutputs
 import time
 import os
+import cv2
 
 
 class ProductGooglenet:
@@ -85,6 +86,11 @@ class ProductGooglenet:
         '''
         for x_tran in self.__x_trainsforms:
             image = x_tran(image)
+
+        cv2.imshow("X", image.numpy()[0])
+        q = cv2.waitKey(-1)
+        if q == ord('q'):
+            sys.exit(0)
         image = torch.unsqueeze(torch.Tensor(image), 0)
         image = image.to(device=self.__device)
         start_time = time.time()
