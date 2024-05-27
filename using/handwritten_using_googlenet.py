@@ -63,9 +63,12 @@ class ProductGooglenet:
         self.__all_classes = torch.load(os.path.join('pretrain', "googlenet_labels.bin"))
         self.__model = GaborGoogLeNet(in_channels=9, num_classes=len(self.__all_classes))
         self.__model = self.__model.to(self.__device)
+        self.__soft_max = nn.Softmax(dim=1)
+        self.__soft_max = self.__soft_max.to(self.__device)
         self.__model.load_state_dict(torch.load(f"pretrain/googlenet_handwritten.pth", map_location='cpu' if self.__device == 'cpu' else None))
         self.__model.eval()
         self.__x_trainsforms = [
+            ImgTo64Transform(need_dilate=True, channel_count=1), 
             ImgTo64Transform(need_dilate=True, channel_count=1), 
             Channel1ToGrad8_1(), 
             ToTensor(tensor_type=torch.float32)]
@@ -87,16 +90,13 @@ class ProductGooglenet:
         for x_tran in self.__x_trainsforms:
             image = x_tran(image)
 
-        cv2.imshow("X", image.numpy()[0])
-        q = cv2.waitKey(-1)
-        if q == ord('q'):
-            sys.exit(0)
         image = torch.unsqueeze(torch.Tensor(image), 0)
         image = image.to(device=self.__device)
         start_time = time.time()
         max_labels = []
         with torch.no_grad():
             pred = self.__model(image)
+            pred = self.__soft_max(pred)
             max = pred[0].argmax(0).item()
             predicted = self.__all_classes[max]
             print(f'预测值: "{predicted}"')
@@ -115,9 +115,12 @@ class ProductGooglenet:
 
 def main():
 
-    test_x = "deng.jpg"
+    test_x = list(range(1, 300))
     net = ProductGooglenet()
-    net.check(test_x)
+    for x in test_x:
+        filename = f'images\\deng\\{x}.jpg'
+        max_labels, max_pred = net.check(filename)
+        print(max_labels)
 
 if __name__ == '__main__':
     main()

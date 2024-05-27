@@ -189,11 +189,11 @@ def export(train = True, out_labels : list[str] = None, chars_only : list[str] =
     pot_folder = []
     if train:
         pot_folder.append(f"work/Pot1.0/Pot1.0Train.zip_out")
-        # pot_folder.append(f"work/Pot1.1/Pot1.1Train.zip_out")
+        pot_folder.append(f"work/Pot1.1/Pot1.1Train.zip_out")
         # pot_folder.append(f"work/Pot1.2/Pot1.2Train.zip_out")
     else:
         pot_folder.append(f"work/Pot1.0/Pot1.0Test.zip_out")
-        # pot_folder.append(f"work/Pot1.1/Pot1.1Test.zip_out")
+        pot_folder.append(f"work/Pot1.1/Pot1.1Test.zip_out")
         # pot_folder.append(f"work/Pot1.2/Pot1.2Test.zip_out")
 
     import time
@@ -221,28 +221,24 @@ def export(train = True, out_labels : list[str] = None, chars_only : list[str] =
                 if not chars_only.__contains__(char):
                     bar()
                     continue
-            max_height = max(max_height, X.shape[0])
-            max_width = max(max_width, X.shape[1])
-            
-            cv.imshow('X', X)
-            cv.waitKey(-1)
-
-            # XX.append(X)
-            # yy.append(y)
+            XX.append(X)
+            yy.append(y)
             i += 1
             if i >= max_char:
                 break;
             if i % 10000 == 0:
-                print("max_height", max_height)
-                print("max_width", max_width)
-                # torch.save(XX, f'work/Bin/{file_index}_{"train" if train else "test"}.x.bin')
-                # torch.save(yy, f'work/Bin/{file_index}_{"train" if train else "test"}.y.bin')
-                # XX = []
-                # yy = []
-                # file_index += 1
+                for i in range(len(XX)):
+                    X = XX[i]
+                    y = yy[i]
+                    cv.imwrite(f"work/jpg/{"train" if train else "test"}_{y}_{i}_{file_index}.jpg")
+                XX = []
+                yy = []
+                file_index += 1
             bar()
-    # torch.save(XX, f'work/Bin/{file_index}_{"train" if train else "test"}.x.bin')
-    # torch.save(yy, f'work/Bin/{file_index}_{"train" if train else "test"}.y.bin')
+    for i in range(len(XX)):
+        X = XX[i]
+        y = yy[i]
+        cv.imwrite(f"work/jpg/{"train" if train else "test"}_{y}_{i}_{file_index}.jpg")
     XX = []
     yy = []
 

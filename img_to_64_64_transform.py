@@ -58,9 +58,11 @@ class ImgTo64Transform:
         
         
         '''
-
         if isinstance(image, str):
             image = cv.imread(image, cv.IMREAD_GRAYSCALE)
+        if image.shape == (1, 64, 64):
+            image = image.reshape((64, 64))
+
 
         if self.__need_dilate:
             # 膨胀和腐蚀都是对于白色像素而言的，所以对于黑色的膨胀，则需要进行白色的腐蚀。
