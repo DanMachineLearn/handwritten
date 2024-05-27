@@ -177,15 +177,12 @@ class HandWrittenDataSet(IterableDataset):
         return X, y
 
 
-def export(train = True, out_labels : list[str] = None, chars_only : list[str] = None, max_char=100000):
+def export(train = True, out_labels : list[str] = None, chars_only : list[str] = None):
     ''' 
     导出pot成bin文件
 
     chars_only = None 只导出特定的字符
     '''
-    train_folder = os.environ["TRAIN_FOLDER"] if os.environ.__contains__("TRAIN_FOLDER") else "PotSimple"
-    # 测试数据集的文件夹
-    test_folder = os.environ["TEST_FOLDER"] if os.environ.__contains__("TEST_FOLDER") else "PotSimpleTest"
     pot_folder = []
     if train:
         pot_folder.append(f"work/Pot1.0/Pot1.0Train.zip_out")
@@ -225,9 +222,7 @@ def export(train = True, out_labels : list[str] = None, chars_only : list[str] =
             XX.append(X)
             yy.append(y)
             i += 1
-            if i >= max_char:
-                break;
-            if i % 1000 == 0:
+            if i % 10000 == 0:
                 for i in range(len(XX)):
                     X = XX[i]
                     y = yy[i]
@@ -251,10 +246,8 @@ def export(train = True, out_labels : list[str] = None, chars_only : list[str] =
     return dataset
 
 def main():
-    # chars_only=['一', '二', '邓', '登']
-    chars_only=None
-    dataset = export(train=True, chars_only=chars_only, max_char=40000)
-    export(train=False, out_labels=dataset.labels, chars_only=chars_only, max_char=10000)
+    dataset = export(train=True)
+    export(train=False, out_labels=dataset.labels)
     pass
 
 if __name__ == '__main__':
