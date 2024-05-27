@@ -227,7 +227,7 @@ def export(train = True, out_labels : list[str] = None, chars_only : list[str] =
             i += 1
             if i >= max_char:
                 break;
-            if i % 10000 == 0:
+            if i % 1000 == 0:
                 for i in range(len(XX)):
                     X = XX[i]
                     y = yy[i]

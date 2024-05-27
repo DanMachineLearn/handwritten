@@ -18,6 +18,7 @@ from algorithm.channel1_to_channel3 import Channel1ToChannel3
 from algorithm.channel1_to_gabor8_1 import Channel1ToGabor8_1
 from algorithm.channel1_to_grad8_1 import Channel1ToGrad8_1
 from dataset.handwritten_img_bin_dataset import HandWrittenBinDataSet
+from dataset.handwritten_img_jpg_dataset import HandWrittenJpgDataSet
 from models.HCCRGoogLeNetModel import GaborGoogLeNet
 from dataset.handwritten_pot_dataset import HandWrittenDataSet
 from img_to_64_64_transform import ImgTo64Transform
@@ -96,13 +97,13 @@ def main():
 
     # x_transforms = [Channel1ToChannel3(), ToTensor(tensor_type=torch.float32)]
     # x_transforms = [Channel1ToGrad8_1(), ToTensor(tensor_type=torch.float32)]
-    x_transforms = [Channel1ToGabor8_1(image_only=True), ToTensor(tensor_type=torch.float32)]
+    x_transforms = [ImgTo64Transform(channel_count=1, fast_handle=True), Channel1ToGabor8_1(image_only=True), ToTensor(tensor_type=torch.float32)]
     y_transforms = [ToTensor(tensor_type=torch.long)]
 
-    train_dataset = HandWrittenBinDataSet(train=True, bin_folder=f"{DATA_SET_FOLDER}/Bin",
+    train_dataset = HandWrittenJpgDataSet(train=True, jpg_folder=f"{DATA_SET_FOLDER}/jpg",
                                           x_transforms=x_transforms, y_transforms=y_transforms)
     
-    test_dataset = HandWrittenBinDataSet(train=False, bin_folder=f"{DATA_SET_FOLDER}/Bin",
+    test_dataset = HandWrittenJpgDataSet(train=False, jpg_folder=f"{DATA_SET_FOLDER}/jpg",
                                           x_transforms=x_transforms, y_transforms=y_transforms)
 
     shuffle = not isinstance(train_dataset, IterableDataset) 
