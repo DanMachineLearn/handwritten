@@ -208,7 +208,8 @@ def export(train = True, out_labels : list[str] = None, chars_only : list[str] =
     XX = []
     yy = []
     file_index = 1
-    torch.save(dataset.labels, f'work/Bin/labels.bin')
+    if train:
+        torch.save(dataset.labels, f'work/Bin/labels.bin')
     max_width = 0
     max_height = 0
     is_train = "train" if train else "test"
@@ -226,7 +227,8 @@ def export(train = True, out_labels : list[str] = None, chars_only : list[str] =
                 for i in range(len(XX)):
                     X = XX[i]
                     y = yy[i]
-                    cv.imwrite(f"work/jpg/{is_train}_{file_index}_{i}_{y}.jpg", X)
+                    label = dataset.labels[y]
+                    cv.imwrite(f"work/jpg/{is_train}_{file_index}_{i}_{y}_{label}.jpg", X)
                 XX = []
                 yy = []
                 file_index += 1
@@ -234,7 +236,8 @@ def export(train = True, out_labels : list[str] = None, chars_only : list[str] =
     for i in range(len(XX)):
         X = XX[i]
         y = yy[i]
-        cv.imwrite(f"work/jpg/{is_train}_{file_index}_{i}_{y}.jpg", X)
+        label = dataset.labels[y]
+        cv.imwrite(f"work/jpg/{is_train}_{file_index}_{i}_{y}_{label}.jpg", X)
     XX = []
     yy = []
 
