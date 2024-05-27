@@ -209,7 +209,7 @@ def export(train = True, out_labels : list[str] = None, chars_only : list[str] =
     yy = []
     file_index = 1
     if train:
-        torch.save(dataset.labels, f'work/Bin/labels.bin')
+        torch.save(dataset.labels, f'work/jpg/labels.bin')
     max_width = 0
     max_height = 0
     is_train = "train" if train else "test"
