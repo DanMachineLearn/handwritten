@@ -231,7 +231,7 @@ def export(train = True, out_labels : list[str] = None, chars_only : list[str] =
                     X = XX[i]
                     y = yy[i]
                     label = dataset.labels[y]
-                    cv.imwrite(f"work/jpg/{is_train}_{file_index}_{i}_{y}_{label}.jpg", X)
+                    cv.imwrite(f"work/jpg/{is_train}_{file_index}_{i}_{y}.jpg", X)
                 XX = []
                 yy = []
                 file_index += 1
@@ -240,7 +240,7 @@ def export(train = True, out_labels : list[str] = None, chars_only : list[str] =
         X = XX[i]
         y = yy[i]
         label = dataset.labels[y]
-        cv.imwrite(f"work/jpg/{is_train}_{file_index}_{i}_{y}_{label}.jpg", X)
+        cv.imwrite(f"work/jpg/{is_train}_{file_index}_{i}_{y}.jpg", X)
     XX = []
     yy = []
 

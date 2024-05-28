@@ -98,7 +98,8 @@ class HandWrittenJpgDataSet(IterableDataset):
         for f in ff:
             if f.endswith('.jpg'):
                 filename = os.path.basename(f)
-                is_train, file_index, i, y, label = filename.split('_')
+                is_train, file_index, i, y = filename.split('_')
+                y = y[0 : y.index(".jpg")]
                 y = int(y)
                 if train and is_train == 'train':
                     XX.append(os.path.join(jpg_folder, f))
