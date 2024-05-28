@@ -67,15 +67,15 @@ class ProductGooglenet:
         self.__soft_max = self.__soft_max.to(self.__device)
         self.__model.load_state_dict(torch.load(f"pretrain/googlenet_handwritten.pth", map_location='cpu' if self.__device == 'cpu' else None))
         self.__model.eval()
-        self.__x_trainsforms = [
-            ImgTo64Transform(need_dilate=True, channel_count=1), 
-            ImgTo64Transform(need_dilate=True, channel_count=1), 
-            Channel1ToGrad8_1(), 
-            ToTensor(tensor_type=torch.float32)]
+        self.__x_trainsforms = [ImgTo64Transform(channel_count=1, fast_handle=True), Channel1ToGabor8_1(image_only=True), ToTensor(tensor_type=torch.float32)]
+        # self.__x_trainsforms = [
+        #     ImgTo64Transform(need_dilate=True, channel_count=1, fast_handle=True), 
+        #     Channel1ToGrad8_1(), 
+        #     ToTensor(tensor_type=torch.float32)]
         
         pass
 
-    def check(self, image : str | np.ndarray) -> tuple[list[str], list]:
+    def check(self, image : str | np.ndarray) -> tuple[list[str], list, float]:
         ''' 监测图片，判断图片属于哪个字体
         
         Parameters
@@ -99,19 +99,18 @@ class ProductGooglenet:
             pred = self.__soft_max(pred)
             max = pred[0].argmax(0).item()
             predicted = self.__all_classes[max]
-            print(f'预测值: "{predicted}"')
             max_list : np.ndarray = np.argsort(-pred[0])[0:9].numpy()
-            max_pred = pred[0][max_list]
+            max_pred : torch.Tensor = pred[0][max_list]
             max_list = max_list.astype(np.int32)
             max_list = max_list.tolist()
-            print("结果输出")
             i = 0
             for l in max_list:
                 max_labels.append(self.__all_classes[l])
-                print(f"{l}\t{self.__all_classes[l]}(置信度 {np.log(-max_pred[i])})")
+                max_pred[i] = float('{:.2f}'.format(max_pred[i] * 100))
+                # print(f"{l}\t{self.__all_classes[l]}(置信度 {max_pred[i]})")
                 i += 1
-            print("总耗时", '{:.2f} s'.format(time.time() - start_time))
-        return max_labels, max_pred
+            time_to_take = float('{:.2f}'.format(time.time() - start_time))
+        return max_labels, max_pred.tolist(), time_to_take
 
 def main():
 
@@ -119,7 +118,7 @@ def main():
     net = ProductGooglenet()
     for x in test_x:
         filename = f'images\\deng\\{x}.jpg'
-        max_labels, max_pred = net.check(filename)
+        max_labels, max_pred, time_to_take = net.check(filename)
         print(max_labels)
 
 if __name__ == '__main__':

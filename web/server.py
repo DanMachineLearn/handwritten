@@ -52,7 +52,11 @@ def upload_image():
             if m.model_name == model:
                 model_net = m
                 break;
-        labels, score = model_net.check("images/t.png")
+        max_labels, max_pred, time_to_take = model_net.check("images/t.png")
+        labels = []
+        for i in range(len(max_labels)):
+            labels.append(max_labels[i] + "(" + str(max_pred[i]) + "%)")
+        labels.append("总耗时 ：" + str(time_to_take) + " s")
         
 
         # 模拟处理并返回标签

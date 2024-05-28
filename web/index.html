@@ -106,7 +106,7 @@
             .then(response => response.json())
             .then(data => {
                 if (data.labels) {
-                    document.getElementById('result').textContent = `Labels: ${data.labels.join(', ')}`;
+                    document.getElementById('result').innerHTML = `${data.labels.join('<br>')}`;
                 } else {
                     document.getElementById('result').textContent = '上传成功，但没有返回标签';
                 }
