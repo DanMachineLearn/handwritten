@@ -76,7 +76,8 @@ class HandWrittenDataSet(IterableDataset):
                  need_label=False,
                  outter_labels:list[str] = None, 
                  x_transforms : list = None,
-                 y_transforms : list = None) -> None:
+                 y_transforms : list = None,
+                 chineses_only = False) -> None:
         ''' 
         Parameters
         ----------
@@ -91,6 +92,8 @@ class HandWrittenDataSet(IterableDataset):
         need_label=True, 是否在输出的y里面添加label
 
         load_from_bin = True 是否加载work目录下的二进制持久化文件
+
+        chineses_only = False 是否只加载汉字
         '''
 
         self.__need_label = need_label
@@ -115,7 +118,7 @@ class HandWrittenDataSet(IterableDataset):
         print("正在获取字符总数")
         with alive_bar(len(pot_folders)) as bar:
             for pot_folder in pot_folders:
-                p = Pot(pot_folder=pot_folder, chineses_only=True)
+                p = Pot(pot_folder=pot_folder, chineses_only=chineses_only)
                 self.__char_count += p.char_count
                 self.__pots.append(p)
                 self.__labels.extend(p.labels)
