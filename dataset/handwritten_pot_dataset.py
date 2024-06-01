@@ -252,6 +252,8 @@ def export(train = True, out_labels : list[str] = None, chars_only : list[str] =
     return dataset
 
 def main():
+    if not os.path.isdir("work/jpg"):
+        os.mkdir("work/jpg")
     dataset = export(train=True)
     export(train=False, out_labels=dataset.labels)
     pass

@@ -30,6 +30,7 @@ from torchvision.models.googlenet import GoogLeNetOutputs
 import time
 import os
 import cv2
+import torchsummary
 
 
 class ProductGooglenet:
@@ -68,6 +69,16 @@ class ProductGooglenet:
         self.__model.load_state_dict(torch.load(f"pretrain/googlenet_handwritten.pth", map_location='cpu' if self.__device == 'cpu' else None))
         self.__model.eval()
         self.__x_trainsforms = [ImgTo64Transform(channel_count=1, fast_handle=True), Channel1ToGabor8_1(image_only=True), ToTensor(tensor_type=torch.float32)]
+
+        # 计算模型参数量
+        num_params = 0
+        params = self.__model.parameters()
+        for param in params:
+            num_params += torch.prod(torch.tensor(param.size()))
+        
+        # 计算模型的计算量
+        torchsummary.summary(self.__model, input_size=(9, 64, 64));
+
         # self.__x_trainsforms = [
         #     ImgTo64Transform(need_dilate=True, channel_count=1, fast_handle=True), 
         #     Channel1ToGrad8_1(), 

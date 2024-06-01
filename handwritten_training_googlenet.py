@@ -60,12 +60,6 @@ def main():
     num_epochs = int(os.environ["NUM_EPOCHS"] if os.environ.__contains__("NUM_EPOCHS") else 5)
     # 前几次训练不修改学习率
     patience = int(os.environ["PATIENCE"] if os.environ.__contains__("PATIENCE") else 1)
-    # 训练数据集的文件夹
-    train_folder = os.environ["TRAIN_FOLDER"] if os.environ.__contains__("TRAIN_FOLDER") else "PotSimple"
-    # 测试数据集的文件夹
-    test_folder = os.environ["TEST_FOLDER"] if os.environ.__contains__("TEST_FOLDER") else "PotSimpleTest"
-    # 一次性加载所有数据到内存中
-    LOAD_ALL_ON_INIT = bool(os.environ["LOAD_ALL_ON_INIT"] if os.environ.__contains__("LOAD_ALL_ON_INIT") else True)
 
     ## 优先使用cuda
     device = (
@@ -78,18 +72,6 @@ def main():
     print(f"using {device} device")
 
     optimizer = 1 # 使用adam，否则使用SDG
-
-    # 样品的数据来源
-    train_pot_folder = []
-    # train_pot_folder.append(f"{DATA_SET_FOLDER}/PotSimple")
-    train_pot_folder.append(f"{DATA_SET_FOLDER}/{train_folder}")
-    # train_pot_folder.append(f"{DATA_SET_FOLDER}/PotTest")
-    test_pot_folder = []
-    test_pot_folder.append(f"{DATA_SET_FOLDER}/{test_folder}")
-    # test_pot_folder.append(f"{DATA_SET_FOLDER}/PotSimple")
-    # test_pot_folder.append(f"{DATA_SET_FOLDER}/PotSimpleTest")
-    # pot_folder.append(f"{DATA_SET_FOLDER}/PotTest")
-    # pot_folder.append(f"{DATA_SET_FOLDER}/PotTrain")
 
     import time
     start_time = time.time()
