@@ -28,6 +28,13 @@ export BATCH_SIZE=512
 python handwritten_training_googlenet.py
 ```
 
+## 启动项目
+``` cmd
+python web/server.py
+```
+
+![预览效果](web/index.png)
+
 
 ## 随便说点
 
